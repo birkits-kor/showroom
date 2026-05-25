@@ -11,19 +11,19 @@
     .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; }
     .form-group { margin-bottom: 24px; }
     label.section-title { display: block; margin-bottom: 12px; font-weight: bold; font-size: 15px; color: #1a1a1a; }
+    .title-hint { font-size: 12px; font-weight: normal; color: #777; margin-left: 4px; }
+    
     input[type="text"], input[type="tel"], input[type="date"], input[type="time"], textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
     input:focus, textarea:focus { border-color: #1a1a1a; outline: none; }
     textarea { resize: vertical; height: 80px; }
     .row { display: flex; gap: 12px; }
     .row .form-group { flex: 1; }
     
-    /* 이미지 카드 크기 축소 및 3열 레이아웃 조정 */
+    /* 이미지 카드 크기 및 레이아웃 */
     .showroom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .showroom-card { position: relative; cursor: pointer; display: flex; flex-direction: column; }
     .showroom-card input[type="radio"] { position: absolute; opacity: 0; }
     .card-content { border: 2px solid #eee; border-radius: 8px; overflow: hidden; transition: all 0.2s ease; background: #fff; height: 100%; display: flex; flex-direction: column; }
-    
-    /* 사진 크 비율을 줄이기 위해 가로로 더 슬림하게 조정 (16:10 비율) */
     .card-content img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; filter: grayscale(10%); } 
     
     /* 텍스트 영역 상세 구성 */
@@ -40,17 +40,20 @@
     .btn-map.no-map { background: #888; cursor: default; }
     .btn-map.no-map:hover { background: #888; }
     
-    /* 라디오 버튼 선택 시 테두리 및 타이틀 영역 강조 */
+    /* 라디오 버튼 선택 시 스타일 */
     .showroom-card input[type="radio"]:checked + .card-content { border-color: #1a1a1a; box-shadow: 0 0 0 1px #1a1a1a; }
     .showroom-card input[type="radio"]:checked + .card-content .card-info { background: #f0f0f0; }
     .showroom-card input[type="radio"]:checked + .card-content .card-title { color: #000; }
 
+    /* 하단 안내 멘트 */
+    .notice-text { text-align: center; font-size: 13px; color: #d9383a; margin-top: 20px; font-weight: 600; line-height: 1.5; background: #fff0f0; padding: 12px; border-radius: 6px; }
+
     /* 신청 버튼 */
-    .btn-submit { width: 100%; background: #1a1a1a; color: #fff; font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+    .btn-submit { width: 100%; background: #1a1a1a; color: #fff; font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
     .btn-submit:hover { background: #333; }
     .btn-submit:disabled { background: #888; cursor: not-allowed; }
 
-    /* 반응형 레이아웃 태블릿/모바일 대응 */
+    /* 반응형 레이아웃 */
     @media (max-width: 768px) {
       .showroom-grid { grid-template-columns: repeat(2, 1fr); }
     }
@@ -64,7 +67,7 @@
 
 <div class="container">
   <h2>버킷츠 쇼룸 방문 예약</h2>
-  <div class="subtitle">체험을 원하시는 지점과 일정을 선택해 주시면 확인 후 맞이해드리겠습니다.</div>
+  <div class="subtitle">체험을 원하시는 지점과 일정을 선택해 주세요.</div>
   
   <form id="reservationForm">
     <div class="form-group">
@@ -78,7 +81,7 @@
     </div>
 
     <div class="form-group">
-      <label class="section-title">방문 쇼룸 선택</label>
+      <label class="section-title">방문 쇼룸 선택 <span class="title-hint">(영업 시간은 매장별 네이버 지도를 확인해주세요)</span></label>
       <div class="showroom-grid">
         
         <label class="showroom-card">
@@ -184,6 +187,10 @@
       <textarea id="memo" placeholder="원하시는 침대 사이즈나 특별한 요청사항이 있다면 적어주세요."></textarea>
     </div>
 
+    <div class="notice-text">
+      ※ 확정 연락은 따로 드리지 않습니다.<br>신청 후 일정을 변경하실 경우 다시 재신청해 주시면 됩니다.
+    </div>
+
     <button type="submit" class="btn-submit" id="submitBtn">예약 신청하기</button>
   </form>
 </div>
@@ -221,7 +228,7 @@
     .then(response => response.json())
     .then(data => {
       if(data.result === 'success') {
-        alert('성공적으로 예약이 접수되었습니다!\n담당자가 확인 후 안내 도와드리겠습니다.');
+        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주시면 됩니다.\n(일정 변경 시 재신청 부탁드립니다.)');
         document.getElementById('reservationForm').reset();
       } else {
         alert('예약 접수 중 오류가 발생했습니다. 다시 시도해주세요.');
