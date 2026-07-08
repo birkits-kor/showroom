@@ -2,20 +2,21 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>버킷츠 모션베드 쇼룸 예약</title>
   <style>
     body { font-family: 'Pretendard', -apple-system, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
     .container { max-width: 700px; margin: 40px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     h2 { text-align: center; margin-bottom: 10px; color: #1a1a1a; font-weight: 800; }
-    .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; }
+    .subtitle { text-align: center; color: #666; font-size: 15px; margin-bottom: 30px; }
     .form-group { margin-bottom: 24px; }
-    label.section-title { display: block; margin-bottom: 12px; font-weight: bold; font-size: 15px; color: #1a1a1a; }
-    .title-hint { font-size: 12px; font-weight: normal; color: #777; margin-left: 4px; }
+    label.section-title { display: block; margin-bottom: 12px; font-weight: bold; font-size: 16px; color: #1a1a1a; }
+    .title-hint { font-size: 13px; font-weight: normal; color: #777; margin-left: 4px; }
     
-    input[type="text"], input[type="tel"], input[type="date"], input[type="time"], textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+    /* 폰트 사이즈 16px로 확대 (iOS 자동 확대 방지 및 가독성 향상) */
+    input[type="text"], input[type="tel"], input[type="date"], input[type="time"], textarea { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
     input:focus, textarea:focus { border-color: #1a1a1a; outline: none; }
-    textarea { resize: vertical; height: 80px; }
+    textarea { resize: vertical; height: 90px; }
     .row { display: flex; gap: 12px; }
     .row .form-group { flex: 1; }
     
@@ -26,16 +27,16 @@
     .card-content { border: 2px solid #eee; border-radius: 8px; overflow: hidden; transition: all 0.2s ease; background: #fff; height: 100%; display: flex; flex-direction: column; }
     .card-content img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; filter: grayscale(10%); } 
     
-    /* 텍스트 영역 상세 구성 */
-    .card-info { padding: 10px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; background: #fafafa; border-top: 1px solid #eee; }
-    .card-title { font-weight: bold; font-size: 14px; color: #1a1a1a; line-height: 1.3; }
-    .sub-text { font-size: 11px; font-weight: normal; color: #777; display: block; margin-top: 2px; }
+    /* 텍스트 영역 상세 구성 (모바일 가독성을 위해 폰트 사이즈 확대) */
+    .card-info { padding: 12px 10px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; background: #fafafa; border-top: 1px solid #eee; }
+    .card-title { font-weight: bold; font-size: 16px; color: #1a1a1a; line-height: 1.3; }
+    .sub-text { font-size: 13px; font-weight: normal; color: #777; display: block; margin-top: 4px; }
     
     /* 전시 정보 강조 스타일 */
-    .display-info { font-size: 11px; color: #d9383a; font-weight: 600; background: #ffebeb; padding: 3px 6px; border-radius: 4px; display: inline-block; margin: 6px auto 8px auto; }
+    .display-info { font-size: 13px; color: #d9383a; font-weight: 600; background: #ffebeb; padding: 4px 8px; border-radius: 4px; display: inline-block; margin: 8px auto 10px auto; }
     
-    /* 네이버 지도 버튼 스타일 */
-    .btn-map { display: block; text-decoration: none; background: #03c75a; color: #fff; font-size: 11px; font-weight: bold; padding: 5px 0; border-radius: 4px; width: 100%; margin-top: auto; transition: background 0.2s; text-align: center; }
+    /* 네이버 지도 버튼 스타일 (터치하기 쉽게 패딩 확대) */
+    .btn-map { display: block; text-decoration: none; background: #03c75a; color: #fff; font-size: 13px; font-weight: bold; padding: 8px 0; border-radius: 4px; width: 100%; margin-top: auto; transition: background 0.2s; text-align: center; }
     .btn-map:hover { background: #17b354; }
     .btn-map.no-map { background: #888; cursor: default; }
     .btn-map.no-map:hover { background: #888; }
@@ -46,7 +47,7 @@
     .showroom-card input[type="radio"]:checked + .card-content .card-title { color: #000; }
 
     /* 하단 안내 멘트 */
-    .notice-text { text-align: center; font-size: 13px; color: #d9383a; margin-top: 20px; font-weight: 600; line-height: 1.5; background: #fff0f0; padding: 12px; border-radius: 6px; }
+    .notice-text { text-align: center; font-size: 14px; color: #d9383a; margin-top: 20px; font-weight: 600; line-height: 1.5; background: #fff0f0; padding: 14px; border-radius: 6px; }
 
     /* 신청 버튼 */
     .btn-submit { width: 100%; background: #1a1a1a; color: #fff; font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
@@ -81,7 +82,7 @@
     </div>
 
     <div class="form-group">
-      <label class="section-title">방문 쇼룸 선택 <span class="title-hint">(공휴일 및 늦은시간 방문시 영업 여부를 매장별 네이버 지도 연락처로 확인 부탁드립니다.)</span></label>
+      <label class="section-title">방문 쇼룸 선택 <span class="title-hint">(영업 시간은 매장별 네이버 지도를 확인해주세요)</span></label>
       <div class="showroom-grid">
         
         <label class="showroom-card">
@@ -133,25 +134,13 @@
         </label>
 
         <label class="showroom-card">
-          <input type="radio" name="showroom" value="양재점(네이버지도 추가 예정 양재 하나로마트 정문 우측)">
+          <input type="radio" name="showroom" value="이브자리 양재(하나로마트 정문 우측)">
           <div class="card-content">
             <img src="https://i.namu.wiki/i/k02q7GA1rNjI-eZOU8SSjGW8k4wRnV1B5EB-x68-P81W0jjLqFL3qPpcwpZrvr2PyuF8jdcxsSTKh3qbvpGfzQ.webp" alt="양재점">
             <div class="card-info">
               <div class="card-title">이브자리 양재<span class="sub-text">(하나로마트 정문 우측)</span></div>
               <div class="display-info">슈브 SS</div>
-              <a href="#" class="btn-map no-map" onclick="event.preventDefault(); event.stopPropagation(); alert('하나로마트 정문으로 입장 후 우측에 위치해 있습니다. (지도 추가 예정)');">지도 준비중</a>
-            </div>
-          </div>
-        </label>
-
-        <label class="showroom-card">
-          <input type="radio" name="showroom" value="서초점(남부터미널)">
-          <div class="card-content">
-            <img src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260415_123%2F1776217596632BKDHV_JPEG%2FKakaoTalk_20260415_104239235.jpg" alt="서초점">
-            <div class="card-info">
-              <div class="card-title">서초점<span class="sub-text">(남부터미널)</span></div>
-              <div class="display-info">슈브 SS</div>
-              <a href="https://naver.me/59lv3ILd" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
+              <a href="https://naver.me/FRoQ1AYk" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
             </div>
           </div>
         </label>
