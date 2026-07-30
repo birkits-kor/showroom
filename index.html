@@ -43,6 +43,20 @@
 
     .notice-text { text-align: center; font-size: 14px; color: #d9383a; margin-top: 20px; font-weight: 600; line-height: 1.5; background: #fff0f0; padding: 14px; border-radius: 6px; }
 
+    .important-notice { background: #fff7e8; border: 1px solid #f2c66d; border-left: 5px solid #e59b18; border-radius: 8px; padding: 16px 18px; margin-bottom: 28px; line-height: 1.55; }
+    .important-notice strong { display: block; color: #7b4b00; font-size: 16px; margin-bottom: 4px; }
+    .important-notice p { margin: 0; color: #604817; font-size: 14px; }
+    .important-notice a { display: inline-block; margin-top: 9px; color: #7b4b00; font-size: 14px; font-weight: 700; text-underline-offset: 3px; }
+
+    .manage-panel { margin-top: 28px; padding: 22px; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; scroll-margin-top: 20px; }
+    .manage-panel h3 { margin: 0 0 8px; font-size: 18px; color: #1a1a1a; }
+    .manage-panel p { margin: 0 0 18px; color: #666; font-size: 14px; line-height: 1.6; }
+    .manage-panel .contact-warning { color: #b32729; font-weight: 700; }
+    .btn-contact { width: 100%; margin-top: 10px; background: #fff; color: #1a1a1a; border: 1px solid #1a1a1a; font-size: 15px; font-weight: bold; padding: 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .btn-contact:hover { background: #1a1a1a; color: #fff; }
+    .btn-contact:disabled { border-color: #ccc; color: #999; background: #f5f5f5; cursor: not-allowed; }
+    .manage-help { margin-top: 10px; font-size: 13px; color: #777; line-height: 1.5; }
+
     .btn-submit { width: 100%; background: #1a1a1a; color: #fff; font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
     .btn-submit:hover { background: #333; }
     .btn-submit:disabled { background: #888; cursor: not-allowed; }
@@ -56,6 +70,12 @@
 <div class="container">
   <h2>버킷츠 쇼룸 방문 예약</h2>
   <div class="subtitle">체험을 원하시는 지점과 일정을 선택해 주세요.</div>
+
+  <div class="important-notice" role="note" aria-label="예약 방문 안내">
+    <strong>예약 시간을 꼭 지켜주세요.</strong>
+    <p>방문이 늦어지거나 예약을 변경·취소해야 하는 경우, 반드시 예약한 매장에 미리 연락해 주세요.</p>
+    <a href="#manageReservation">예약 변경·취소 안내 보기</a>
+  </div>
   
   <form id="reservationForm">
     <div class="form-group">
@@ -153,7 +173,7 @@
         <input type="date" id="date" required>
       </div>
       <div class="form-group">
-        <label class="section-title" for="time">방문 시간</label>
+        <label class="section-title" for="time">방문 시간 <span class="title-hint">(1시간 단위)</span></label>
         <select id="time" required disabled>
           <option value="" disabled selected>지점과 날짜를 먼저 선택해주세요</option>
         </select>
@@ -166,11 +186,28 @@
     </div>
 
     <div class="notice-text">
-      ※ 확정 연락은 따로 드리지 않습니다.<br>신청 후 일정을 변경하실 경우 다시 재신청해 주시면 됩니다.
+      ※ 확정 연락은 따로 드리지 않습니다.<br>지각·일정 변경·예약 취소 시에는 반드시 예약한 매장에 미리 연락해 주세요.
     </div>
 
     <button type="submit" class="btn-submit" id="submitBtn">예약 신청하기</button>
   </form>
+
+  <section class="manage-panel" id="manageReservation" aria-labelledby="manageTitle">
+    <h3 id="manageTitle">예약 변경·취소</h3>
+    <p><span class="contact-warning">변경·취소는 예약한 매장에 직접 연락해 주세요.</span><br>매장에서 예약자 정보를 확인한 후 처리해 드립니다. 아래에서 예약한 매장을 선택하면 연락처가 있는 매장 페이지로 이동합니다.</p>
+    <label class="section-title" for="manageShowroom">예약한 매장</label>
+    <select id="manageShowroom">
+      <option value="" selected>매장을 선택해주세요</option>
+      <option value="삼성점(봉은사역)">삼성점 (봉은사역)</option>
+      <option value="압구정점">압구정점</option>
+      <option value="아주대 병원점(수원시 영통구)">아주대 병원점 (수원시 영통구)</option>
+      <option value="회기점(동대문구)">회기점 (동대문구)</option>
+      <option value="이브자리 양재(하나로마트 정문 우측)">이브자리 양재 (하나로마트 정문 우측)</option>
+      <option value="파주운정점(스타필드 빌리지)">파주운정점 (스타필드 빌리지)</option>
+    </select>
+    <button type="button" class="btn-contact" id="contactShowroomBtn" disabled>매장 연락처 확인하기</button>
+    <div class="manage-help">매장 페이지가 열리면 전화 버튼을 눌러 예약자 성함과 기존 방문 일정을 말씀해 주세요. 온라인에서 새 예약만 다시 신청하면 기존 예약은 자동 취소되지 않습니다.</div>
+  </section>
 </div>
 
 <script>
@@ -259,12 +296,12 @@
       return;
     }
 
-    // 시간을 분 단위로 환산하여 30분 단위 옵션 생성
+    // 시간을 분 단위로 환산하여 1시간 단위 옵션 생성
     const startMins = openHour * 60;
-    // 종료 30분 전이 '마지막 신청 가능 시간'이므로 -30을 해줍니다.
-    const endMins = (closeHour * 60) - 30; 
+    // 1시간 체험이 영업 종료 전에 끝나도록 마지막 신청 가능 시간을 계산합니다.
+    const endMins = (closeHour * 60) - 60; 
 
-    for (let mins = startMins; mins <= endMins; mins += 30) {
+    for (let mins = startMins; mins <= endMins; mins += 60) {
       let h = Math.floor(mins / 60);
       let m = mins % 60;
       let timeStr = String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0');
@@ -273,8 +310,9 @@
       option.value = timeStr;
       option.text = timeStr;
 
-      // 구글 시트 마감 데이터와 대조
-      if (bookedTimes.includes(timeStr)) {
+      // 기존 30분 예약이 남아 있어도 새 1시간 예약과 겹치지 않도록 함께 대조합니다.
+      const halfHourLater = String(h).padStart(2, '0') + ":30";
+      if (bookedTimes.includes(timeStr) || bookedTimes.includes(halfHourLater)) {
         option.disabled = true;
         option.text = `${timeStr} (예약마감)`;
       }
@@ -317,6 +355,27 @@
   showroomRadios.forEach(radio => radio.addEventListener('change', fetchBookedTimes));
   dateInput.addEventListener('change', fetchBookedTimes);
 
+  // 예약 변경·취소 시 선택한 매장의 연락처 페이지를 안내합니다.
+  const showroomMapUrls = {
+    "삼성점(봉은사역)": "https://naver.me/FbVBWSQz",
+    "압구정점": "https://naver.me/5PVXL3GU",
+    "아주대 병원점(수원시 영통구)": "https://naver.me/FY3Odocw",
+    "회기점(동대문구)": "https://naver.me/FK0NVfhW",
+    "이브자리 양재(하나로마트 정문 우측)": "https://naver.me/FRoQ1AYk",
+    "파주운정점(스타필드 빌리지)": "https://naver.me/Ffsewkgu"
+  };
+  const manageShowroom = document.getElementById('manageShowroom');
+  const contactShowroomBtn = document.getElementById('contactShowroomBtn');
+
+  manageShowroom.addEventListener('change', () => {
+    contactShowroomBtn.disabled = !showroomMapUrls[manageShowroom.value];
+  });
+
+  contactShowroomBtn.addEventListener('click', () => {
+    const mapUrl = showroomMapUrls[manageShowroom.value];
+    if (mapUrl) window.open(mapUrl, '_blank', 'noopener,noreferrer');
+  });
+
   // 예약 신청 서브밋
   document.getElementById('reservationForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -348,7 +407,7 @@
     .then(response => response.json())
     .then(data => {
       if(data.result === 'success') {
-        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주시면 됩니다.\n(일정 변경 시 재신청 부탁드립니다.)');
+        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.\n지각·일정 변경·예약 취소 시에는 반드시 예약한 매장에 미리 연락해 주세요.');
         document.getElementById('reservationForm').reset();
         fetchBookedTimes(); 
       } else {
