@@ -2,96 +2,117 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#cbc3b6">
   <title>버킷츠 모션베드 쇼룸 예약</title>
+  <link rel="icon" href="./birkit-logo.jpg" type="image/jpeg">
   <style>
-    body { font-family: 'Pretendard', -apple-system, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
-    .container { max-width: 700px; margin: 40px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    h2 { text-align: center; margin-bottom: 10px; color: #1a1a1a; font-weight: 800; }
-    .subtitle { text-align: center; color: #666; font-size: 15px; margin-bottom: 30px; }
-    .form-group { margin-bottom: 24px; }
-    label.section-title { display: block; margin-bottom: 12px; font-weight: bold; font-size: 16px; color: #1a1a1a; }
-    .title-hint { font-size: 13px; font-weight: normal; color: #777; margin-left: 4px; }
-    
-    input[type="text"], input[type="tel"], input[type="date"], select, textarea { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: #fff; }
-    input:focus, select:focus, textarea:focus { border-color: #1a1a1a; outline: none; }
-    select:disabled { background-color: #f5f5f5; color: #999; cursor: not-allowed; }
-    textarea { resize: vertical; height: 90px; }
-    .row { display: flex; gap: 12px; }
-    .row .form-group { flex: 1; }
-    
-    .showroom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .showroom-card { position: relative; cursor: pointer; display: flex; flex-direction: column; }
-    .showroom-card input[type="radio"] { position: absolute; opacity: 0; }
-    .card-content { border: 2px solid #eee; border-radius: 8px; overflow: hidden; transition: all 0.2s ease; background: #fff; height: 100%; display: flex; flex-direction: column; }
-    .card-content img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; filter: grayscale(10%); } 
-    
-    .card-info { padding: 12px 10px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; background: #fafafa; border-top: 1px solid #eee; }
-    .card-title { font-weight: bold; font-size: 16px; color: #1a1a1a; line-height: 1.3; }
-    .sub-text { font-size: 13px; font-weight: normal; color: #777; display: block; margin-top: 4px; }
-    
-    .display-info { font-size: 13px; color: #d9383a; font-weight: 600; background: #ffebeb; padding: 4px 8px; border-radius: 4px; display: inline-block; margin: 8px auto 10px auto; }
-    
-    .btn-map { display: block; text-decoration: none; background: #03c75a; color: #fff; font-size: 13px; font-weight: bold; padding: 8px 0; border-radius: 4px; width: 100%; margin-top: auto; transition: background 0.2s; text-align: center; }
-    .btn-map:hover { background: #17b354; }
-    .btn-map.no-map { background: #888; cursor: default; }
-    .btn-map.no-map:hover { background: #888; }
-    
-    .showroom-card input[type="radio"]:checked + .card-content { border-color: #1a1a1a; box-shadow: 0 0 0 1px #1a1a1a; }
-    .showroom-card input[type="radio"]:checked + .card-content .card-info { background: #f0f0f0; }
-    .showroom-card input[type="radio"]:checked + .card-content .card-title { color: #000; }
-
-    .notice-text { text-align: center; font-size: 14px; color: #d9383a; margin-top: 20px; font-weight: 600; line-height: 1.5; background: #fff0f0; padding: 14px; border-radius: 6px; }
-
-    .important-notice { background: #fff7e8; border: 1px solid #f2c66d; border-left: 5px solid #e59b18; border-radius: 8px; padding: 16px 18px; margin-bottom: 28px; line-height: 1.55; }
-    .important-notice strong { display: block; color: #7b4b00; font-size: 16px; margin-bottom: 4px; }
-    .important-notice p { margin: 0; color: #604817; font-size: 14px; }
-    .important-notice a { display: inline-block; margin-top: 9px; color: #7b4b00; font-size: 14px; font-weight: 700; text-underline-offset: 3px; }
-
+    :root { --ink: #161616; --muted: #6c6964; --line: #ddd8d0; --paper: #ffffff; --warm: #cbc3b6; --soft: #f5f3ef; --accent: #b74337; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--soft); margin: 0; padding: 24px; color: var(--ink); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 900px; margin: 20px auto 48px; background: var(--paper); padding: clamp(26px, 5vw, 58px); border: 1px solid #e5e0d8; border-radius: 28px; box-shadow: 0 24px 70px rgba(42, 37, 31, 0.08); overflow: hidden; position: relative; }
+    .container::before { content: ''; position: absolute; width: 280px; height: 280px; right: -170px; top: -150px; border: 36px solid rgba(203, 195, 182, 0.23); border-radius: 50%; pointer-events: none; }
+    .brand-header { display: flex; align-items: center; gap: 22px; margin-bottom: 30px; position: relative; }
+    .brand-logo { width: 94px; height: 94px; object-fit: cover; border-radius: 18px; border: 1px solid #d7d0c5; flex: 0 0 auto; }
+    .eyebrow { margin: 0 0 5px; color: var(--muted); font-size: 13px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 5vw, 40px); line-height: 1.16; letter-spacing: -0.04em; }
+    .subtitle { color: var(--muted); font-size: 17px; margin: 8px 0 0; }
+    .form-group { margin-bottom: 28px; }
+    label.section-title { display: block; margin-bottom: 11px; font-weight: 800; font-size: 18px; color: var(--ink); letter-spacing: -0.02em; }
+    .title-hint { display: block; font-size: 14px; font-weight: 500; color: var(--muted); margin-top: 3px; }
+    input[type="text"], input[type="tel"], input[type="date"], select, textarea { width: 100%; min-height: 56px; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 12px; font: inherit; font-size: 18px; color: var(--ink); background: #fff; transition: border-color .2s, box-shadow .2s; }
+    input::placeholder, textarea::placeholder { color: #9a9690; }
+    input:focus, select:focus, textarea:focus { border-color: var(--ink); outline: none; box-shadow: 0 0 0 4px rgba(22,22,22,.08); }
+    input[readonly] { background: #f1efeb; color: #5e5a55; }
+    select:disabled { background: #f2f0ec; color: #777; cursor: not-allowed; }
+    textarea { resize: vertical; min-height: 116px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .row .form-group { min-width: 0; }
+    .showroom-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .showroom-card { position: relative; cursor: pointer; display: flex; min-width: 0; -webkit-tap-highlight-color: transparent; }
+    .showroom-card input[type="radio"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .card-content { border: 2px solid var(--line); border-radius: 18px; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; background: #fff; min-height: 100%; width: 100%; display: flex; flex-direction: column; }
+    .card-content img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #eeeae4; }
+    .card-info { padding: 18px; text-align: left; flex-grow: 1; display: flex; flex-direction: column; background: #fff; border-top: 1px solid #eeeae4; }
+    .card-title { font-weight: 900; font-size: 20px; color: var(--ink); line-height: 1.3; letter-spacing: -0.025em; }
+    .sub-text { font-size: 15px; font-weight: 500; color: var(--muted); display: block; margin-top: 3px; }
+    .display-info { font-size: 14px; color: #645f58; font-weight: 700; background: #f1efeb; padding: 6px 10px; border-radius: 999px; display: inline-flex; align-self: flex-start; margin: 12px 0 15px; }
+    .select-button, .btn-map { min-height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px; width: 100%; font-size: 16px; font-weight: 800; text-align: center; }
+    .select-button { background: var(--ink); color: #fff; margin-top: auto; }
+    .selected-label { display: none; }
+    .btn-map { text-decoration: none; background: #f2f0ec; color: var(--ink); border: 1px solid #ded9d1; margin-top: 9px; transition: background .2s; }
+    .btn-map:hover { background: #e9e5df; }
+    .showroom-card:hover .card-content { border-color: #a29b90; transform: translateY(-2px); }
+    .showroom-card input[type="radio"]:focus-visible + .card-content { outline: 4px solid rgba(22,22,22,.18); outline-offset: 3px; }
+    .showroom-card input[type="radio"]:checked + .card-content { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(22,22,22,.09); }
+    .showroom-card input[type="radio"]:checked + .card-content .select-button { background: var(--warm); color: var(--ink); }
+    .showroom-card input[type="radio"]:checked + .card-content .default-label { display: none; }
+    .showroom-card input[type="radio"]:checked + .card-content .selected-label { display: inline; }
+    .notice-text { font-size: 16px; color: #4f4b46; margin-top: 8px; line-height: 1.6; background: #f3f1ed; padding: 16px 18px; border-radius: 12px; }
+    .important-notice { background: var(--ink); color: #fff; border-radius: 16px; padding: 19px 21px; margin-bottom: 34px; line-height: 1.55; position: relative; }
+    .important-notice strong { display: block; font-size: 18px; margin-bottom: 3px; }
+    .important-notice p { margin: 0; color: #dedad3; font-size: 16px; }
+    .important-notice a { display: inline-flex; min-height: 44px; align-items: center; margin-top: 8px; color: #fff; font-size: 15px; font-weight: 800; text-underline-offset: 4px; }
     [hidden] { display: none !important; }
-    .manage-panel { margin-top: 28px; padding: 22px; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; scroll-margin-top: 20px; }
-    .manage-panel h3 { margin: 0 0 8px; font-size: 18px; color: #1a1a1a; }
-    .manage-panel p { margin: 0 0 18px; color: #666; font-size: 14px; line-height: 1.6; }
-    .manage-panel .contact-warning { color: #b32729; font-weight: 700; }
-    .btn-contact { width: 100%; margin-top: 10px; background: #fff; color: #1a1a1a; border: 1px solid #1a1a1a; font-size: 15px; font-weight: bold; padding: 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-    .btn-contact:hover { background: #1a1a1a; color: #fff; }
-    .btn-contact:disabled { border-color: #ccc; color: #999; background: #f5f5f5; cursor: not-allowed; }
-    .manage-help { margin-top: 10px; font-size: 13px; color: #777; line-height: 1.5; }
-    .lookup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .manage-panel { margin-top: 40px; padding: clamp(22px, 4vw, 32px); border: 1px solid var(--line); border-radius: 18px; background: #f7f5f1; scroll-margin-top: 20px; }
+    .manage-panel h3 { margin: 0 0 7px; font-size: 24px; letter-spacing: -0.03em; }
+    .manage-panel p { margin: 0 0 22px; color: var(--muted); font-size: 16px; line-height: 1.6; }
+    .btn-contact { width: 100%; min-height: 56px; margin-top: 4px; background: #fff; color: var(--ink); border: 1.5px solid var(--ink); font-size: 17px; font-weight: 900; padding: 14px; border-radius: 12px; cursor: pointer; transition: background .2s, color .2s; }
+    .btn-contact:hover { background: var(--ink); color: #fff; }
+    .btn-contact:disabled { border-color: #ccc; color: #999; background: #eeeae4; cursor: not-allowed; }
+    .lookup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .lookup-grid .form-group { margin-bottom: 12px; }
-    .manage-status { margin-top: 14px; padding: 12px; border-radius: 6px; background: #f0f0f0; color: #555; font-size: 14px; line-height: 1.5; }
-    .manage-status.error { background: #fff0f0; color: #b32729; }
-    .reservation-list { display: grid; gap: 12px; margin-top: 14px; }
-    .reservation-item { padding: 16px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
-    .reservation-title { font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
-    .reservation-detail { color: #555; font-size: 14px; line-height: 1.6; white-space: pre-line; }
-    .reservation-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-    .btn-small { flex: 1; min-width: 90px; border: 1px solid #1a1a1a; border-radius: 5px; padding: 10px 12px; background: #fff; color: #1a1a1a; font-weight: 700; font-size: 13px; text-align: center; text-decoration: none; cursor: pointer; box-sizing: border-box; }
-    .btn-small:hover { background: #f1f1f1; }
-    .btn-small.primary { background: #1a1a1a; color: #fff; }
-    .btn-small.danger { border-color: #c72f31; color: #c72f31; }
-    .edit-banner { margin-bottom: 22px; padding: 15px; border: 1px solid #8ba7d0; border-radius: 8px; background: #eef5ff; color: #25466f; font-size: 14px; line-height: 1.5; }
+    .manage-status { margin-top: 16px; padding: 14px 16px; border-radius: 10px; background: #ece9e3; color: #4f4b46; font-size: 16px; line-height: 1.5; }
+    .manage-status.error { background: #fff0ee; color: #a5352b; }
+    .reservation-list { display: grid; gap: 14px; margin-top: 16px; }
+    .reservation-item { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+    .reservation-title { font-weight: 900; color: var(--ink); margin-bottom: 6px; font-size: 19px; }
+    .reservation-detail { color: #57534e; font-size: 16px; line-height: 1.6; white-space: pre-line; }
+    .reservation-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+    .btn-small { flex: 1; min-width: 108px; min-height: 50px; border: 1px solid var(--ink); border-radius: 10px; padding: 12px 14px; background: #fff; color: var(--ink); font-weight: 800; font-size: 15px; text-align: center; text-decoration: none; cursor: pointer; box-sizing: border-box; }
+    .btn-small:hover { background: #f1efeb; }
+    .btn-small.primary { background: var(--ink); color: #fff; }
+    .btn-small.danger { border-color: var(--accent); color: var(--accent); }
+    .edit-banner { margin-bottom: 24px; padding: 17px 18px; border: 1px solid #978f84; border-radius: 12px; background: #f1efeb; color: #383531; font-size: 16px; line-height: 1.5; }
     .edit-banner strong { display: block; margin-bottom: 4px; }
-    .btn-cancel-edit { margin-top: 10px; border: 0; background: transparent; color: #25466f; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
-
-    .btn-submit { width: 100%; background: #1a1a1a; color: #fff; font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
-    .btn-submit:hover { background: #333; }
-    .btn-submit:disabled { background: #888; cursor: not-allowed; }
-
-    @media (max-width: 768px) { .showroom-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px) { .showroom-grid, .lookup-grid { grid-template-columns: 1fr; } .container { padding: 20px; margin: 10px auto; } }
+    .btn-cancel-edit { min-height: 44px; margin-top: 6px; border: 0; background: transparent; color: #383531; font-size: 15px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; }
+    .btn-submit { width: 100%; min-height: 62px; background: var(--ink); color: #fff; font-size: 19px; font-weight: 900; padding: 17px; border: none; border-radius: 13px; cursor: pointer; margin-top: 14px; transition: transform .2s, background .2s; }
+    .btn-submit:hover { background: #303030; transform: translateY(-1px); }
+    .btn-submit:disabled { background: #888; cursor: not-allowed; transform: none; }
+    @media (max-width: 720px) {
+      body { padding: 0; background: #fff; }
+      .container { margin: 0; padding: 24px 18px 44px; border: 0; border-radius: 0; box-shadow: none; }
+      .brand-header { align-items: flex-start; gap: 14px; margin-bottom: 24px; }
+      .brand-logo { width: 76px; height: 76px; border-radius: 14px; }
+      .eyebrow { font-size: 11px; }
+      h1 { font-size: 29px; }
+      .subtitle { font-size: 16px; }
+      .showroom-grid, .lookup-grid, .row { grid-template-columns: 1fr; }
+      .row { gap: 0; }
+      .showroom-grid { gap: 16px; }
+      .card-title { font-size: 21px; }
+      .important-notice { margin-bottom: 30px; }
+      .manage-panel { margin-inline: -4px; }
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>버킷츠 쇼룸 방문 예약</h2>
-  <div class="subtitle">체험을 원하시는 지점과 일정을 선택해 주세요.</div>
+  <header class="brand-header">
+    <img class="brand-logo" src="./birkit-logo.jpg" alt="버킷츠 로고" width="300" height="300">
+    <div>
+      <p class="eyebrow">AI MOTION BED SHOWROOM</p>
+      <h1>쇼룸 방문 예약</h1>
+      <p class="subtitle">편안한 체험을 위해 방문하실 매장과 시간을 선택해 주세요.</p>
+    </div>
+  </header>
 
   <div class="important-notice" role="note" aria-label="예약 방문 안내">
     <strong>예약 시간을 꼭 지켜주세요.</strong>
-    <p>방문이 늦어지거나 예약을 변경·취소해야 하는 경우, 반드시 예약한 매장에 미리 연락해 주세요.</p>
-    <a href="#manageReservation">예약 변경·취소 안내 보기</a>
+    <p>방문이 늦을 경우에는 예약한 매장에 미리 연락해 주세요.</p>
+    <a href="#manageReservation">기존 예약 조회·변경·취소</a>
   </div>
   
   <form id="reservationForm">
@@ -101,27 +122,29 @@
       <button type="button" class="btn-cancel-edit" id="cancelEditBtn">변경 중단하고 새 예약으로 돌아가기</button>
     </div>
 
-    <div class="form-group">
-      <label class="section-title" for="name">성함</label>
-      <input type="text" id="name" placeholder="예약자 성함을 입력해주세요" required>
-    </div>
-    
-    <div class="form-group">
-      <label class="section-title" for="phone">연락처</label>
-      <input type="tel" id="phone" placeholder="010-0000-0000" required>
+    <div class="row">
+      <div class="form-group">
+        <label class="section-title" for="name">예약자 성함</label>
+        <input type="text" id="name" placeholder="성함을 입력해 주세요" autocomplete="name" required>
+      </div>
+      <div class="form-group">
+        <label class="section-title" for="phone">휴대전화 번호</label>
+        <input type="tel" id="phone" placeholder="010-0000-0000" autocomplete="tel" inputmode="tel" required>
+      </div>
     </div>
 
     <div class="form-group">
-      <label class="section-title">방문 쇼룸 선택 <span class="title-hint">(영업 시간은 매장별 네이버 지도를 확인해주세요)</span></label>
+      <label class="section-title">방문 쇼룸을 선택해 주세요 <span class="title-hint">카드의 어느 부분을 눌러도 선택됩니다. 매장 정보는 네이버 지도에서 확인해 주세요.</span></label>
       <div class="showroom-grid">
         
         <label class="showroom-card">
           <input type="radio" name="showroom" value="삼성점(봉은사역)" required>
           <div class="card-content">
-            <img src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20220719_38%2F1658226936756vzA7S_JPEG%2FKakaoTalk_20220719_193158907_12.jpg" alt="삼성점">
+            <img loading="lazy" decoding="async" src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20220719_38%2F1658226936756vzA7S_JPEG%2FKakaoTalk_20220719_193158907_12.jpg" alt="삼성점">
             <div class="card-info">
               <div class="card-title">삼성점<span class="sub-text">(봉은사역)</span></div>
               <div class="display-info">전사이즈 전제품</div>
+              <span class="select-button"><span class="default-label">이 매장 선택</span><span class="selected-label">선택 완료 ✓</span></span>
               <a href="https://naver.me/FbVBWSQz" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
             </div>
           </div>
@@ -130,10 +153,11 @@
         <label class="showroom-card">
           <input type="radio" name="showroom" value="압구정점">
           <div class="card-content">
-            <img src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20180304_295%2F1520132091061njO7N_JPEG%2F9a6BXKmSNkwo6VWXOKQVefDZ.jpg" alt="압구정점">
+            <img loading="lazy" decoding="async" src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20180304_295%2F1520132091061njO7N_JPEG%2F9a6BXKmSNkwo6VWXOKQVefDZ.jpg" alt="압구정점">
             <div class="card-info">
               <div class="card-title">압구정점<span class="sub-text">(현대아파트 맞은편)</span></div>
               <div class="display-info">슈브 SS</div>
+              <span class="select-button"><span class="default-label">이 매장 선택</span><span class="selected-label">선택 완료 ✓</span></span>
               <a href="https://naver.me/5PVXL3GU" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
             </div>
           </div>
@@ -142,10 +166,11 @@
         <label class="showroom-card">
           <input type="radio" name="showroom" value="아주대 병원점(수원시 영통구)">
           <div class="card-content">
-            <img src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20220714_220%2F1657786161373VAwEu_JPEG%2F%25B1%25D7%25B8%25B23.jpg" alt="아주대 병원점">
+            <img loading="lazy" decoding="async" src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20220714_220%2F1657786161373VAwEu_JPEG%2F%25B1%25D7%25B8%25B23.jpg" alt="아주대 병원점">
             <div class="card-info">
               <div class="card-title">아주대 병원점<span class="sub-text">(수원 영통구)</span></div>
               <div class="display-info">슈브 SS</div>
+              <span class="select-button"><span class="default-label">이 매장 선택</span><span class="selected-label">선택 완료 ✓</span></span>
               <a href="https://naver.me/FY3Odocw" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
             </div>
           </div>
@@ -154,10 +179,11 @@
         <label class="showroom-card">
           <input type="radio" name="showroom" value="회기점(동대문구)">
           <div class="card-content">
-            <img src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20241130_277%2F17329384926682j14d_JPEG%2FKakaoTalk_20241130_124737637.jpg" alt="회기점">
+            <img loading="lazy" decoding="async" src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20241130_277%2F17329384926682j14d_JPEG%2FKakaoTalk_20241130_124737637.jpg" alt="회기점">
             <div class="card-info">
               <div class="card-title">회기점<span class="sub-text">(동대문구)</span></div>
               <div class="display-info">마베드SS / 슈브S+S</div>
+              <span class="select-button"><span class="default-label">이 매장 선택</span><span class="selected-label">선택 완료 ✓</span></span>
               <a href="https://naver.me/FK0NVfhW" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
             </div>
           </div>
@@ -166,10 +192,11 @@
         <label class="showroom-card">
           <input type="radio" name="showroom" value="이브자리 양재(하나로마트 정문 우측)">
           <div class="card-content">
-            <img src="https://i.namu.wiki/i/k02q7GA1rNjI-eZOU8SSjGW8k4wRnV1B5EB-x68-P81W0jjLqFL3qPpcwpZrvr2PyuF8jdcxsSTKh3qbvpGfzQ.webp" alt="양재점">
+            <img loading="lazy" decoding="async" src="https://i.namu.wiki/i/k02q7GA1rNjI-eZOU8SSjGW8k4wRnV1B5EB-x68-P81W0jjLqFL3qPpcwpZrvr2PyuF8jdcxsSTKh3qbvpGfzQ.webp" alt="양재점">
             <div class="card-info">
               <div class="card-title">이브자리 양재<span class="sub-text">(하나로마트 정문 우측)</span></div>
               <div class="display-info">슈브 SS</div>
+              <span class="select-button"><span class="default-label">이 매장 선택</span><span class="selected-label">선택 완료 ✓</span></span>
               <a href="https://naver.me/FRoQ1AYk" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
             </div>
           </div>
@@ -178,10 +205,11 @@
         <label class="showroom-card">
           <input type="radio" name="showroom" value="파주운정점(스타필드 빌리지)">
           <div class="card-content">
-            <img src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260505_298%2F1777947714273oHIu5_JPEG%2FKakaoTalk_20260505_112107650.jpg" alt="파주운정점">
+            <img loading="lazy" decoding="async" src="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20260505_298%2F1777947714273oHIu5_JPEG%2FKakaoTalk_20260505_112107650.jpg" alt="파주운정점">
             <div class="card-info">
               <div class="card-title">파주운정점<span class="sub-text">(스타필드 빌리지)</span></div>
               <div class="display-info">마베드SS / 슈브 SS</div>
+              <span class="select-button"><span class="default-label">이 매장 선택</span><span class="selected-label">선택 완료 ✓</span></span>
               <a href="https://naver.me/Ffsewkgu" target="_blank" class="btn-map" onclick="event.stopPropagation();">네이버 지도 ↗</a>
             </div>
           </div>
@@ -209,7 +237,7 @@
     </div>
 
     <div class="notice-text">
-      ※ 확정 연락은 따로 드리지 않습니다.<br>지각·일정 변경·예약 취소 시에는 반드시 예약한 매장에 미리 연락해 주세요.
+      신청과 동시에 예약이 접수되며 별도의 확정 연락은 드리지 않습니다.
     </div>
 
     <button type="submit" class="btn-submit" id="submitBtn">예약 신청하기</button>
@@ -217,7 +245,7 @@
 
   <section class="manage-panel" id="manageReservation" aria-labelledby="manageTitle">
     <h3 id="manageTitle">내 예약 조회·변경·취소</h3>
-    <p>예약할 때 입력한 성함과 연락처로 예정된 예약을 조회할 수 있습니다.<br><span class="contact-warning">온라인에서 변경·취소한 뒤에도 예약한 매장에 꼭 연락해 주세요.</span></p>
+    <p>예약할 때 입력한 성함과 연락처로 예정된 예약을 조회할 수 있습니다.</p>
     <form id="lookupForm">
       <div class="lookup-grid">
         <div class="form-group">
@@ -233,7 +261,6 @@
     </form>
     <div class="manage-status" id="manageStatus" aria-live="polite" hidden></div>
     <div class="reservation-list" id="reservationList"></div>
-    <div class="manage-help">동명이인이 같은 연락처를 사용하는 경우에는 매장에 직접 연락해 주세요. 취소된 예약은 목록에서 사라지고 해당 시간은 다시 예약 가능해집니다.</div>
   </section>
 </div>
 
@@ -434,7 +461,7 @@
     .then(response => response.json())
     .then(data => {
       if(data.result === 'success') {
-        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.\n지각·일정 변경·예약 취소 시에는 반드시 예약한 매장에 미리 연락해 주세요.');
+        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.');
         document.getElementById('reservationForm').reset();
         fetchBookedTimes(); 
       } else {
@@ -643,7 +670,7 @@
 
   const cancelReservationV2 = async (record) => {
     if (!lastLookupCredentials) return;
-    const confirmed = window.confirm(`${record.showroom}\n${record.date} ${record.time}\n\n이 예약을 취소할까요? 취소 후에는 되돌릴 수 없으며, 매장에도 꼭 연락해 주세요.`);
+    const confirmed = window.confirm(`${record.showroom}\n${record.date} ${record.time}\n\n이 예약을 취소할까요? 취소 후에는 되돌릴 수 없습니다.`);
     if (!confirmed) return;
 
     setManageStatus('예약을 취소하고 있습니다.');
@@ -657,7 +684,7 @@
       if (data.result !== 'success') throw new Error(data.message || '예약 취소에 실패했습니다.');
 
       if (editingReservation?.id === record.id) resetReservationForm();
-      alert('예약이 취소되었습니다.\n방문 예정이었던 매장에도 꼭 연락해 주세요.');
+      alert('예약이 취소되었습니다.');
       await lookupReservationsV2();
       await fetchBookedTimesV2();
     } catch (error) {
@@ -784,11 +811,11 @@
       if (data.result !== 'success') throw new Error(data.message || '요청 처리 중 오류가 발생했습니다.');
 
       if (wasEditing) {
-        alert('예약이 변경되었습니다.\n변경 전 매장 또는 변경된 매장에도 꼭 연락해 주세요.');
+        alert('예약이 변경되었습니다.');
         resetReservationForm();
         await lookupReservationsV2();
       } else {
-        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.\n지각·일정 변경·예약 취소 시에는 반드시 예약한 매장에 미리 연락해 주세요.');
+        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.');
         resetReservationForm();
       }
       await fetchBookedTimesV2();
