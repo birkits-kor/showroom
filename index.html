@@ -48,6 +48,7 @@
     .important-notice p { margin: 0; color: #604817; font-size: 14px; }
     .important-notice a { display: inline-block; margin-top: 9px; color: #7b4b00; font-size: 14px; font-weight: 700; text-underline-offset: 3px; }
 
+    [hidden] { display: none !important; }
     .manage-panel { margin-top: 28px; padding: 22px; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; scroll-margin-top: 20px; }
     .manage-panel h3 { margin: 0 0 8px; font-size: 18px; color: #1a1a1a; }
     .manage-panel p { margin: 0 0 18px; color: #666; font-size: 14px; line-height: 1.6; }
@@ -56,13 +57,29 @@
     .btn-contact:hover { background: #1a1a1a; color: #fff; }
     .btn-contact:disabled { border-color: #ccc; color: #999; background: #f5f5f5; cursor: not-allowed; }
     .manage-help { margin-top: 10px; font-size: 13px; color: #777; line-height: 1.5; }
+    .lookup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .lookup-grid .form-group { margin-bottom: 12px; }
+    .manage-status { margin-top: 14px; padding: 12px; border-radius: 6px; background: #f0f0f0; color: #555; font-size: 14px; line-height: 1.5; }
+    .manage-status.error { background: #fff0f0; color: #b32729; }
+    .reservation-list { display: grid; gap: 12px; margin-top: 14px; }
+    .reservation-item { padding: 16px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
+    .reservation-title { font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
+    .reservation-detail { color: #555; font-size: 14px; line-height: 1.6; white-space: pre-line; }
+    .reservation-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .btn-small { flex: 1; min-width: 90px; border: 1px solid #1a1a1a; border-radius: 5px; padding: 10px 12px; background: #fff; color: #1a1a1a; font-weight: 700; font-size: 13px; text-align: center; text-decoration: none; cursor: pointer; box-sizing: border-box; }
+    .btn-small:hover { background: #f1f1f1; }
+    .btn-small.primary { background: #1a1a1a; color: #fff; }
+    .btn-small.danger { border-color: #c72f31; color: #c72f31; }
+    .edit-banner { margin-bottom: 22px; padding: 15px; border: 1px solid #8ba7d0; border-radius: 8px; background: #eef5ff; color: #25466f; font-size: 14px; line-height: 1.5; }
+    .edit-banner strong { display: block; margin-bottom: 4px; }
+    .btn-cancel-edit { margin-top: 10px; border: 0; background: transparent; color: #25466f; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
 
     .btn-submit { width: 100%; background: #1a1a1a; color: #fff; font-size: 16px; font-weight: bold; padding: 16px; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
     .btn-submit:hover { background: #333; }
     .btn-submit:disabled { background: #888; cursor: not-allowed; }
 
     @media (max-width: 768px) { .showroom-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 480px) { .showroom-grid { grid-template-columns: 1fr; } .container { padding: 20px; margin: 10px auto; } }
+    @media (max-width: 480px) { .showroom-grid, .lookup-grid { grid-template-columns: 1fr; } .container { padding: 20px; margin: 10px auto; } }
   </style>
 </head>
 <body>
@@ -78,6 +95,12 @@
   </div>
   
   <form id="reservationForm">
+    <div class="edit-banner" id="editBanner" hidden>
+      <strong>기존 예약을 변경하는 중입니다.</strong>
+      <span id="editBannerText"></span>
+      <button type="button" class="btn-cancel-edit" id="cancelEditBtn">변경 중단하고 새 예약으로 돌아가기</button>
+    </div>
+
     <div class="form-group">
       <label class="section-title" for="name">성함</label>
       <input type="text" id="name" placeholder="예약자 성함을 입력해주세요" required>
@@ -193,24 +216,28 @@
   </form>
 
   <section class="manage-panel" id="manageReservation" aria-labelledby="manageTitle">
-    <h3 id="manageTitle">예약 변경·취소</h3>
-    <p><span class="contact-warning">변경·취소는 예약한 매장에 직접 연락해 주세요.</span><br>매장에서 예약자 정보를 확인한 후 처리해 드립니다. 아래에서 예약한 매장을 선택하면 연락처가 있는 매장 페이지로 이동합니다.</p>
-    <label class="section-title" for="manageShowroom">예약한 매장</label>
-    <select id="manageShowroom">
-      <option value="" selected>매장을 선택해주세요</option>
-      <option value="삼성점(봉은사역)">삼성점 (봉은사역)</option>
-      <option value="압구정점">압구정점</option>
-      <option value="아주대 병원점(수원시 영통구)">아주대 병원점 (수원시 영통구)</option>
-      <option value="회기점(동대문구)">회기점 (동대문구)</option>
-      <option value="이브자리 양재(하나로마트 정문 우측)">이브자리 양재 (하나로마트 정문 우측)</option>
-      <option value="파주운정점(스타필드 빌리지)">파주운정점 (스타필드 빌리지)</option>
-    </select>
-    <button type="button" class="btn-contact" id="contactShowroomBtn" disabled>매장 연락처 확인하기</button>
-    <div class="manage-help">매장 페이지가 열리면 전화 버튼을 눌러 예약자 성함과 기존 방문 일정을 말씀해 주세요. 온라인에서 새 예약만 다시 신청하면 기존 예약은 자동 취소되지 않습니다.</div>
+    <h3 id="manageTitle">내 예약 조회·변경·취소</h3>
+    <p>예약할 때 입력한 성함과 연락처로 예정된 예약을 조회할 수 있습니다.<br><span class="contact-warning">온라인에서 변경·취소한 뒤에도 예약한 매장에 꼭 연락해 주세요.</span></p>
+    <form id="lookupForm">
+      <div class="lookup-grid">
+        <div class="form-group">
+          <label class="section-title" for="manageName">예약자 성함</label>
+          <input type="text" id="manageName" autocomplete="name" required>
+        </div>
+        <div class="form-group">
+          <label class="section-title" for="managePhone">예약자 연락처</label>
+          <input type="tel" id="managePhone" placeholder="010-0000-0000" autocomplete="tel" required>
+        </div>
+      </div>
+      <button type="submit" class="btn-contact" id="lookupBtn">내 예약 조회하기</button>
+    </form>
+    <div class="manage-status" id="manageStatus" aria-live="polite" hidden></div>
+    <div class="reservation-list" id="reservationList"></div>
+    <div class="manage-help">동명이인이 같은 연락처를 사용하는 경우에는 매장에 직접 연락해 주세요. 취소된 예약은 목록에서 사라지고 해당 시간은 다시 예약 가능해집니다.</div>
   </section>
 </div>
 
-<script>
+<script type="text/plain" id="legacyReservationScript">
   // 🚨 아래 주소는 대표님의 구글 앱스 스크립트 웹앱 URL로 꼭 변경해주세요!
   const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6BNSJXaL1FKdodWEsE4vMREDONPqaDqp3AB-lOfNISAygDf4MAqVLUzLN9VExVU4M/exec";
 
@@ -422,6 +449,356 @@
       submitBtn.innerText = '예약 신청하기';
       submitBtn.disabled = false;
     });
+  });
+</script>
+
+<script>
+  const GOOGLE_APP_SCRIPT_URL_V2 = "https://script.google.com/macros/s/AKfycbw6BNSJXaL1FKdodWEsE4vMREDONPqaDqp3AB-lOfNISAygDf4MAqVLUzLN9VExVU4M/exec";
+  const reservationForm = document.getElementById('reservationForm');
+  const nameInput = document.getElementById('name');
+  const phoneInput = document.getElementById('phone');
+  const dateInputV2 = document.getElementById('date');
+  const timeSelectV2 = document.getElementById('time');
+  const memoInput = document.getElementById('memo');
+  const submitBtnV2 = document.getElementById('submitBtn');
+  const showroomRadiosV2 = document.querySelectorAll('input[name="showroom"]');
+  const editBanner = document.getElementById('editBanner');
+  const editBannerText = document.getElementById('editBannerText');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  const lookupForm = document.getElementById('lookupForm');
+  const manageNameInput = document.getElementById('manageName');
+  const managePhoneInput = document.getElementById('managePhone');
+  const lookupBtn = document.getElementById('lookupBtn');
+  const manageStatus = document.getElementById('manageStatus');
+  const reservationList = document.getElementById('reservationList');
+
+  let editingReservation = null;
+  let lastLookupCredentials = null;
+
+  const now = new Date();
+  const localToday = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0')
+  ].join('-');
+  dateInputV2.min = localToday;
+
+  const showroomMapUrlsV2 = {
+    "삼성점(봉은사역)": "https://naver.me/FbVBWSQz",
+    "압구정점": "https://naver.me/5PVXL3GU",
+    "아주대 병원점(수원시 영통구)": "https://naver.me/FY3Odocw",
+    "회기점(동대문구)": "https://naver.me/FK0NVfhW",
+    "이브자리 양재(하나로마트 정문 우측)": "https://naver.me/FRoQ1AYk",
+    "파주운정점(스타필드 빌리지)": "https://naver.me/Ffsewkgu"
+  };
+
+  const isHolidayV2 = (dateObject) => {
+    const mm = String(dateObject.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObject.getDate()).padStart(2, '0');
+    return ["01-01", "03-01", "05-05", "06-06", "08-15", "10-03", "10-09", "12-25"].includes(`${mm}-${dd}`);
+  };
+
+  const generateTimeOptionsV2 = (bookedTimes = []) => {
+    timeSelectV2.innerHTML = '<option value="" disabled selected>원하시는 시간을 선택해주세요</option>';
+
+    const selectedShowroom = document.querySelector('input[name="showroom"]:checked')?.value;
+    const selectedDate = dateInputV2.value;
+    if (!selectedShowroom || !selectedDate) return false;
+
+    const dateObject = new Date(`${selectedDate}T00:00:00`);
+    const day = dateObject.getDay();
+    const holiday = isHolidayV2(dateObject);
+    let openHour = 10;
+    let closeHour = 20;
+
+    switch (selectedShowroom) {
+      case "삼성점(봉은사역)":
+        closeHour = (day >= 1 && day <= 4 && !holiday) ? 21 : 20.5;
+        break;
+      case "압구정점":
+        if (day === 0) closeHour = 20.5;
+        else if (day === 5 || holiday) closeHour = 20;
+        else closeHour = 21;
+        break;
+      case "아주대 병원점(수원시 영통구)":
+        if (day === 0 || day === 6 || holiday) closeHour = -1;
+        else closeHour = 18;
+        break;
+      case "회기점(동대문구)":
+        closeHour = day === 0 ? 19 : 21;
+        break;
+      case "이브자리 양재(하나로마트 정문 우측)":
+        openHour = 9;
+        closeHour = 20;
+        break;
+      case "파주운정점(스타필드 빌리지)":
+        closeHour = 22;
+        break;
+    }
+
+    if (closeHour === -1) {
+      timeSelectV2.innerHTML = '<option value="" disabled selected>해당 날짜는 매장 휴무일입니다.</option>';
+      timeSelectV2.disabled = true;
+      return false;
+    }
+
+    const startMinutes = openHour * 60;
+    const endMinutes = closeHour * 60 - 60;
+    const currentMoment = new Date();
+    const currentMinutes = currentMoment.getHours() * 60 + currentMoment.getMinutes();
+    for (let minutes = startMinutes; minutes <= endMinutes; minutes += 60) {
+      const hour = Math.floor(minutes / 60);
+      const time = `${String(hour).padStart(2, '0')}:00`;
+      const legacyHalfHour = `${String(hour).padStart(2, '0')}:30`;
+      const option = document.createElement('option');
+      option.value = time;
+      option.textContent = time;
+      if (selectedDate === localToday && minutes <= currentMinutes) {
+        option.disabled = true;
+        option.textContent = `${time} (지난 시간)`;
+      } else if (bookedTimes.includes(time) || bookedTimes.includes(legacyHalfHour)) {
+        option.disabled = true;
+        option.textContent = `${time} (예약마감)`;
+      }
+      timeSelectV2.appendChild(option);
+    }
+    return true;
+  };
+
+  const fetchBookedTimesV2 = async () => {
+    const selectedShowroom = document.querySelector('input[name="showroom"]:checked')?.value;
+    const selectedDate = dateInputV2.value;
+    if (!selectedShowroom || !selectedDate) {
+      timeSelectV2.disabled = true;
+      timeSelectV2.innerHTML = '<option value="" disabled selected>지점과 날짜를 먼저 선택해주세요</option>';
+      return;
+    }
+
+    timeSelectV2.disabled = true;
+    timeSelectV2.innerHTML = '<option value="" disabled selected>예약 가능 시간 확인 중...</option>';
+    const excludeRow = editingReservation ? `&excludeRowId=${encodeURIComponent(editingReservation.id)}` : '';
+    const url = `${GOOGLE_APP_SCRIPT_URL_V2}?action=getBookedTimes&date=${encodeURIComponent(selectedDate)}&showroom=${encodeURIComponent(selectedShowroom)}${excludeRow}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.result === 'error') throw new Error(data.message || '예약 시간 조회 실패');
+      const isOpen = generateTimeOptionsV2(data.bookedTimes || []);
+      timeSelectV2.disabled = !isOpen;
+    } catch (error) {
+      console.error(error);
+      timeSelectV2.innerHTML = '<option value="" disabled selected>예약 가능 시간을 불러오지 못했습니다.</option>';
+      timeSelectV2.disabled = true;
+    }
+  };
+
+  const postToServer = async (payload) => {
+    const response = await fetch(GOOGLE_APP_SCRIPT_URL_V2, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain' }
+    });
+    return response.json();
+  };
+
+  const setManageStatus = (message, isError = false) => {
+    manageStatus.textContent = message;
+    manageStatus.classList.toggle('error', isError);
+    manageStatus.hidden = !message;
+  };
+
+  const resetReservationForm = () => {
+    editingReservation = null;
+    reservationForm.reset();
+    nameInput.readOnly = false;
+    phoneInput.readOnly = false;
+    editBanner.hidden = true;
+    editBannerText.textContent = '';
+    submitBtnV2.textContent = '예약 신청하기';
+    timeSelectV2.disabled = true;
+    timeSelectV2.innerHTML = '<option value="" disabled selected>지점과 날짜를 먼저 선택해주세요</option>';
+  };
+
+  const startEditingReservation = async (record) => {
+    if (!lastLookupCredentials) return;
+    editingReservation = record;
+    nameInput.value = lastLookupCredentials.name;
+    phoneInput.value = lastLookupCredentials.phone;
+    nameInput.readOnly = true;
+    phoneInput.readOnly = true;
+    memoInput.value = record.memo || '';
+    dateInputV2.value = record.date;
+
+    showroomRadiosV2.forEach((radio) => {
+      radio.checked = radio.value === record.showroom;
+    });
+
+    editBanner.hidden = false;
+    editBannerText.textContent = `${record.showroom} / ${record.date} ${record.time}`;
+    submitBtnV2.textContent = '예약 변경 저장하기';
+    await fetchBookedTimesV2();
+    timeSelectV2.value = record.time;
+    reservationForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const cancelReservationV2 = async (record) => {
+    if (!lastLookupCredentials) return;
+    const confirmed = window.confirm(`${record.showroom}\n${record.date} ${record.time}\n\n이 예약을 취소할까요? 취소 후에는 되돌릴 수 없으며, 매장에도 꼭 연락해 주세요.`);
+    if (!confirmed) return;
+
+    setManageStatus('예약을 취소하고 있습니다.');
+    try {
+      const data = await postToServer({
+        action: 'cancelReservation',
+        reservationId: record.id,
+        lookupName: lastLookupCredentials.name,
+        lookupPhone: lastLookupCredentials.phone
+      });
+      if (data.result !== 'success') throw new Error(data.message || '예약 취소에 실패했습니다.');
+
+      if (editingReservation?.id === record.id) resetReservationForm();
+      alert('예약이 취소되었습니다.\n방문 예정이었던 매장에도 꼭 연락해 주세요.');
+      await lookupReservationsV2();
+      await fetchBookedTimesV2();
+    } catch (error) {
+      setManageStatus(error.message || '예약 취소 중 오류가 발생했습니다.', true);
+    }
+  };
+
+  const renderReservations = (reservations) => {
+    reservationList.replaceChildren();
+    reservations.forEach((record) => {
+      const item = document.createElement('article');
+      item.className = 'reservation-item';
+
+      const title = document.createElement('div');
+      title.className = 'reservation-title';
+      title.textContent = `${record.date} ${record.time}`;
+
+      const detail = document.createElement('div');
+      detail.className = 'reservation-detail';
+      detail.textContent = `방문 지점: ${record.showroom}${record.memo ? `\n문의사항: ${record.memo}` : ''}`;
+
+      const actions = document.createElement('div');
+      actions.className = 'reservation-actions';
+
+      const editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.className = 'btn-small primary';
+      editButton.textContent = '예약 변경';
+      editButton.addEventListener('click', () => startEditingReservation(record));
+
+      const cancelButton = document.createElement('button');
+      cancelButton.type = 'button';
+      cancelButton.className = 'btn-small danger';
+      cancelButton.textContent = '예약 취소';
+      cancelButton.addEventListener('click', () => cancelReservationV2(record));
+
+      actions.append(editButton, cancelButton);
+      const mapUrl = showroomMapUrlsV2[record.showroom];
+      if (mapUrl) {
+        const contactLink = document.createElement('a');
+        contactLink.className = 'btn-small';
+        contactLink.href = mapUrl;
+        contactLink.target = '_blank';
+        contactLink.rel = 'noopener noreferrer';
+        contactLink.textContent = '매장 연락';
+        actions.appendChild(contactLink);
+      }
+
+      item.append(title, detail, actions);
+      reservationList.appendChild(item);
+    });
+  };
+
+  const lookupReservationsV2 = async () => {
+    const name = manageNameInput.value.trim();
+    const phone = managePhoneInput.value.trim();
+    if (!name || !phone) {
+      setManageStatus('예약자 성함과 연락처를 입력해 주세요.', true);
+      return;
+    }
+
+    lookupBtn.disabled = true;
+    lookupBtn.textContent = '예약 조회 중...';
+    setManageStatus('예정된 예약을 확인하고 있습니다.');
+    reservationList.replaceChildren();
+
+    try {
+      const data = await postToServer({ action: 'lookupReservation', name, phone });
+      if (data.result !== 'success') throw new Error(data.message || '예약 조회에 실패했습니다.');
+      lastLookupCredentials = { name, phone };
+      const reservations = data.reservations || [];
+      if (!reservations.length) {
+        setManageStatus('일치하는 예정 예약이 없습니다. 입력 정보를 다시 확인하거나 매장에 연락해 주세요.');
+        return;
+      }
+      setManageStatus(`예정된 예약 ${reservations.length}건을 찾았습니다.`);
+      renderReservations(reservations);
+    } catch (error) {
+      setManageStatus(error.message || '예약 조회 중 오류가 발생했습니다.', true);
+    } finally {
+      lookupBtn.disabled = false;
+      lookupBtn.textContent = '내 예약 조회하기';
+    }
+  };
+
+  showroomRadiosV2.forEach((radio) => radio.addEventListener('change', fetchBookedTimesV2));
+  dateInputV2.addEventListener('change', fetchBookedTimesV2);
+  cancelEditBtn.addEventListener('click', resetReservationForm);
+  lookupForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    lookupReservationsV2();
+  });
+
+  reservationForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const selectedShowroom = document.querySelector('input[name="showroom"]:checked');
+    if (!selectedShowroom) {
+      alert('방문하실 지점을 선택해 주세요.');
+      return;
+    }
+
+    const wasEditing = Boolean(editingReservation);
+    const requestData = {
+      action: wasEditing ? 'updateReservation' : 'createReservation',
+      name: nameInput.value,
+      phone: phoneInput.value,
+      showroom: selectedShowroom.value,
+      date: dateInputV2.value,
+      time: timeSelectV2.value,
+      memo: memoInput.value
+    };
+
+    if (wasEditing) {
+      requestData.reservationId = editingReservation.id;
+      requestData.lookupName = lastLookupCredentials.name;
+      requestData.lookupPhone = lastLookupCredentials.phone;
+    }
+
+    submitBtnV2.disabled = true;
+    submitBtnV2.textContent = wasEditing ? '예약 변경 중...' : '예약 접수 중...';
+
+    try {
+      const data = await postToServer(requestData);
+      if (data.result !== 'success') throw new Error(data.message || '요청 처리 중 오류가 발생했습니다.');
+
+      if (wasEditing) {
+        alert('예약이 변경되었습니다.\n변경 전 매장 또는 변경된 매장에도 꼭 연락해 주세요.');
+        resetReservationForm();
+        await lookupReservationsV2();
+      } else {
+        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.\n지각·일정 변경·예약 취소 시에는 반드시 예약한 매장에 미리 연락해 주세요.');
+        resetReservationForm();
+      }
+      await fetchBookedTimesV2();
+    } catch (error) {
+      alert(error.message || '네트워크 오류가 발생했습니다. 다시 시도해 주세요.');
+      await fetchBookedTimesV2();
+    } finally {
+      submitBtnV2.disabled = false;
+      submitBtnV2.textContent = editingReservation ? '예약 변경 저장하기' : '예약 신청하기';
+    }
   });
 </script>
 
