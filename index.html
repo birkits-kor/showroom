@@ -129,7 +129,7 @@
       </div>
       <div class="form-group">
         <label class="section-title" for="phone">휴대전화 번호</label>
-        <input type="tel" id="phone" placeholder="010-0000-0000" autocomplete="tel" inputmode="tel" required>
+        <input type="tel" id="phone" placeholder="010-0000-0000" autocomplete="tel" inputmode="numeric" maxlength="13" required>
       </div>
     </div>
 
@@ -254,7 +254,7 @@
         </div>
         <div class="form-group">
           <label class="section-title" for="managePhone">예약자 연락처</label>
-          <input type="tel" id="managePhone" placeholder="010-0000-0000" autocomplete="tel" required>
+          <input type="tel" id="managePhone" placeholder="010-0000-0000" autocomplete="tel" inputmode="numeric" maxlength="13" required>
         </div>
       </div>
       <button type="submit" class="btn-contact" id="lookupBtn">내 예약 조회하기</button>
@@ -306,8 +306,7 @@
     switch(selectedShowroom) {
       case "삼성점(봉은사역)":
         openHour = 10;
-        // 월(1)~목(4) 평일은 21시, 그 외(금토일 및 공휴일)는 20.5 (20시30분)
-        closeHour = (day >= 1 && day <= 4 && !isHoli) ? 21 : 20.5;
+        closeHour = 21; // 21시 마감, 20시까지 예약 가능
         break;
 
       case "압구정점":
@@ -499,6 +498,19 @@
   const manageStatus = document.getElementById('manageStatus');
   const reservationList = document.getElementById('reservationList');
 
+  const formatPhoneNumber = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  };
+
+  [phoneInput, managePhoneInput].forEach((input) => {
+    input.addEventListener('input', () => {
+      input.value = formatPhoneNumber(input.value);
+    });
+  });
+
   let editingReservation = null;
   let lastLookupCredentials = null;
 
@@ -540,7 +552,7 @@
 
     switch (selectedShowroom) {
       case "삼성점(봉은사역)":
-        closeHour = (day >= 1 && day <= 4 && !holiday) ? 21 : 20.5;
+        closeHour = 21; // 21시 마감, 20시까지 예약 가능
         break;
       case "압구정점":
         if (day === 0) closeHour = 20.5;
