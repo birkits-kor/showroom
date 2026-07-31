@@ -306,13 +306,13 @@
     switch(selectedShowroom) {
       case "삼성점(봉은사역)":
         openHour = 10;
-        closeHour = 21; // 21시 마감, 20시까지 예약 가능
+        closeHour = (day >= 1 && day <= 5) ? 21 : 20.5; // 월~금 21:00, 토~일 20:30
         break;
 
       case "압구정점":
         openHour = 10;
         if (day === 0) closeHour = 20.5; // 일요일 20:30
-        else if (day === 5 || isHoli) closeHour = 20; // 금요일 및 공휴일 20:00
+        else if (day === 5) closeHour = 20; // 금요일 20:00
         else closeHour = 21; // 월~목, 토요일 21:00
         break;
 
@@ -351,7 +351,7 @@
 
     // 시간을 분 단위로 환산하여 1시간 단위 옵션 생성
     const startMins = openHour * 60;
-    // 1시간 체험이 영업 종료 전에 끝나도록 마지막 신청 가능 시간을 계산합니다.
+    // 정시 단위 예약: 마감 1시간 전, 30분 마감 지점은 1시간 30분 전이 마지막 예약입니다.
     const endMins = (closeHour * 60) - 60; 
 
     for (let mins = startMins; mins <= endMins; mins += 60) {
@@ -552,11 +552,11 @@
 
     switch (selectedShowroom) {
       case "삼성점(봉은사역)":
-        closeHour = 21; // 21시 마감, 20시까지 예약 가능
+        closeHour = (day >= 1 && day <= 5) ? 21 : 20.5; // 월~금 21:00, 토~일 20:30
         break;
       case "압구정점":
         if (day === 0) closeHour = 20.5;
-        else if (day === 5 || holiday) closeHour = 20;
+        else if (day === 5) closeHour = 20;
         else closeHour = 21;
         break;
       case "아주대 병원점(수원시 영통구)":
@@ -582,6 +582,7 @@
     }
 
     const startMinutes = openHour * 60;
+    // 정시 단위 예약: 마감 1시간 전, 30분 마감 지점은 1시간 30분 전이 마지막 예약입니다.
     const endMinutes = closeHour * 60 - 60;
     const currentMoment = new Date();
     const currentMinutes = currentMoment.getHours() * 60 + currentMoment.getMinutes();
