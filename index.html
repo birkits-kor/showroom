@@ -21,7 +21,7 @@
     .form-group { margin-bottom: 28px; }
     label.section-title { display: block; margin-bottom: 11px; font-weight: 800; font-size: 18px; color: var(--ink); letter-spacing: -0.02em; }
     .title-hint { display: block; font-size: 14px; font-weight: 500; color: var(--muted); margin-top: 3px; }
-    input[type="text"], input[type="tel"], input[type="date"], select, textarea { width: 100%; min-height: 56px; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 12px; font: inherit; font-size: 18px; color: var(--ink); background: #fff; transition: border-color .2s, box-shadow .2s; }
+    input[type="text"], input[type="tel"], input[type="email"], input[type="date"], select, textarea { width: 100%; min-height: 56px; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 12px; font: inherit; font-size: 18px; color: var(--ink); background: #fff; transition: border-color .2s, box-shadow .2s; }
     input::placeholder, textarea::placeholder { color: #9a9690; }
     input:focus, select:focus, textarea:focus { border-color: var(--ink); outline: none; box-shadow: 0 0 0 4px rgba(22,22,22,.08); }
     input[readonly] { background: #f1efeb; color: #5e5a55; }
@@ -138,6 +138,11 @@
     </div>
 
     <div class="form-group">
+      <label class="section-title" for="email">이메일 주소 <span class="title-hint">예약 확인·변경·취소 안내 메일을 보내드립니다.</span></label>
+      <input type="email" id="email" placeholder="example@email.com" autocomplete="email" inputmode="email" required>
+    </div>
+
+    <div class="form-group">
       <label class="section-title">방문 쇼룸을 선택해 주세요 <span class="title-hint">카드의 어느 부분을 눌러도 선택됩니다. 매장 정보는 네이버 지도에서 확인해 주세요.</span></label>
       <div class="showroom-grid">
         
@@ -242,7 +247,7 @@
     </div>
 
     <div class="notice-text">
-      신청과 동시에 예약이 접수되며 별도의 확정 연락은 드리지 않습니다.
+      신청과 동시에 예약이 접수되며 별도의 확정 연락은 드리지 않습니다. 입력하신 이메일로 예약 내용과 확인·변경·취소 링크를 보내드립니다.
     </div>
 
     <button type="submit" class="btn-submit" id="submitBtn">예약 신청하기</button>
@@ -488,6 +493,7 @@
   const reservationForm = document.getElementById('reservationForm');
   const nameInput = document.getElementById('name');
   const phoneInput = document.getElementById('phone');
+  const emailInput = document.getElementById('email');
   const dateInputV2 = document.getElementById('date');
   const timeSelectV2 = document.getElementById('time');
   const memoInput = document.getElementById('memo');
@@ -664,6 +670,7 @@
     reservationForm.reset();
     nameInput.readOnly = false;
     phoneInput.readOnly = false;
+    emailInput.readOnly = false;
     editBanner.hidden = true;
     editBannerText.textContent = '';
     submitBtnV2.textContent = '예약 신청하기';
@@ -676,6 +683,7 @@
     editingReservation = record;
     nameInput.value = lastLookupCredentials.name;
     phoneInput.value = lastLookupCredentials.phone;
+    emailInput.value = record.email || '';
     nameInput.readOnly = true;
     phoneInput.readOnly = true;
     memoInput.value = record.memo || '';
@@ -704,12 +712,15 @@
         action: 'cancelReservation',
         reservationId: record.id,
         lookupName: lastLookupCredentials.name,
-        lookupPhone: lastLookupCredentials.phone
+        lookupPhone: lastLookupCredentials.phone,
+        pageUrl: getReservationManageUrl()
       });
       if (data.result !== 'success') throw new Error(data.message || '예약 취소에 실패했습니다.');
 
       if (editingReservation?.id === record.id) resetReservationForm();
-      alert('예약이 취소되었습니다.');
+      alert(data.customerEmailSent
+        ? '예약이 취소되었습니다.\n\n입력하신 이메일로 취소 안내를 보내드렸습니다.'
+        : '예약이 취소되었습니다.\n\n취소 안내 메일은 발송되지 않았습니다.');
       await lookupReservationsV2();
       await fetchBookedTimesV2();
     } catch (error) {
@@ -816,6 +827,7 @@
       action: wasEditing ? 'updateReservation' : 'createReservation',
       name: nameInput.value,
       phone: phoneInput.value,
+      email: emailInput.value,
       showroom: selectedShowroom.value,
       date: dateInputV2.value,
       time: timeSelectV2.value,
@@ -837,11 +849,15 @@
       if (data.result !== 'success') throw new Error(data.message || '요청 처리 중 오류가 발생했습니다.');
 
       if (wasEditing) {
-        alert('예약이 변경되었습니다.');
+        alert(data.customerEmailSent
+          ? '예약이 변경되었습니다.\n\n입력하신 이메일로 변경 안내를 보내드렸습니다.'
+          : '예약은 변경되었지만 안내 메일 발송에 실패했습니다.\n입력한 이메일 주소를 확인해 주세요.');
         resetReservationForm();
         await lookupReservationsV2();
       } else {
-        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.');
+        alert(data.customerEmailSent
+          ? '성공적으로 예약이 접수되었습니다!\n\n입력하신 이메일로 예약 확인 메일을 보내드렸습니다.\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.'
+          : '예약은 정상 접수되었지만 안내 메일 발송에 실패했습니다.\n입력한 이메일 주소를 확인해 주세요.');
         resetReservationForm();
       }
       await fetchBookedTimesV2();
