@@ -549,7 +549,7 @@ function renderCustomerEmail(body) {
     '<a style="display:block;padding:15px;border:1px solid #b74337;color:#a5352b;text-align:center;text-decoration:none;border-radius:9px" href="' + links.cancel + '">예약 취소</a></p></div>';
 }
 
-// 설치 시 시트와 오전 9시경 트리거만 준비합니다. 고객 메일은 발송하지 않습니다.
+// 시트 준비 함수입니다. 매일 오전 9시 트리거는 Apps Script의 트리거 화면에서 등록합니다. 고객 메일은 발송하지 않습니다.
 function setupShowroomNoShowPrevention() {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -580,17 +580,10 @@ function setupShowroomNoShowPrevention() {
     sheet.getRange(1, 10).setNote("중복 발송 방지를 위한 매장·일정·이메일 기록입니다. 수동으로 수정하지 마세요.");
     sheet.getRange(1, 11).setNote("온라인 신청·변경 시 필수 방문 약속 확인을 완료한 시각입니다. 기존 예약에는 임의로 채우지 않습니다.");
     sheet.getRange(1, 12).setNote("같은 연락처의 예약 중 매장에서 직접 '노쇼'로 표시한 건수입니다.");
-    var triggers = ScriptApp.getProjectTriggers().filter(function(trigger) {
-      return trigger.getHandlerFunction() === "sendTomorrowReservationReminders";
-    });
-    if (!triggers.length) {
-      ScriptApp.newTrigger("sendTomorrowReservationReminders").timeBased()
-        .atHour(9).nearMinute(0).everyDays(1).inTimezone("Asia/Seoul").create();
-    }
     SpreadsheetApp.flush();
     console.log(JSON.stringify({
       version: SERVICE_VERSION, setup: "complete", reminderTime: "매일 오전 9시경 (Asia/Seoul)",
-      reminderTriggers: Math.max(1, triggers.length), reminderEmailsSentDuringSetup: 0
+      reminderInstallation: "Apps Script 트리거 화면에서 매일 오전 9시 실행을 등록합니다.", reminderEmailsSentDuringSetup: 0
     }));
   } finally {
     lock.releaseLock();
@@ -648,15 +641,11 @@ function sendTomorrowReservationReminders() {
 // 읽기 전용 점검: 고객 메일 발송이나 예약 변경은 하지 않습니다.
 function checkShowroomNoShowPrevention() {
   var sheet = getReservationSheet();
-  var triggers = ScriptApp.getProjectTriggers().filter(function(trigger) {
-    return trigger.getHandlerFunction() === "sendTomorrowReservationReminders";
-  });
   var result = {
     version: SERVICE_VERSION,
     spreadsheetId: sheet.getParent().getId(),
     sheet: sheet.getName(),
     headers: sheet.getRange(1, 7, 1, 6).getValues()[0],
-    reminderTriggers: triggers.length,
     lastReminderRun: PropertiesService.getScriptProperties().getProperty("LAST_REMINDER_RUN") || "아직 실행되지 않음"
   };
   console.log(JSON.stringify(result));

@@ -50,6 +50,15 @@
     .showroom-card input[type="radio"]:checked + .card-content .select-button { background: var(--warm); color: var(--ink); }
     .showroom-card input[type="radio"]:checked + .card-content .default-label { display: none; }
     .showroom-card input[type="radio"]:checked + .card-content .selected-label { display: inline; }
+    .visit-promise { margin: 24px 0 16px; padding: 20px; border: 2px solid #d7cbb8; border-radius: 14px; background: #faf7f1; }
+    .visit-promise h2 { margin: 0 0 9px; font-size: 21px; letter-spacing: -.03em; }
+    .visit-promise p { margin: 0 0 12px; font-size: 16px; }
+    .promise-check { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; cursor: pointer; font-weight: 800; font-size: 17px; }
+    .promise-check input { flex: 0 0 26px; width: 26px; height: 26px; margin: 2px 0 0; accent-color: var(--ink); }
+    .booking-success { margin: 26px 0; padding: 22px; border: 2px solid #6b7e63; border-radius: 16px; background: #f3f7ef; scroll-margin-top: 20px; }
+    .booking-success h2 { margin: 0 0 10px; font-size: 24px; }
+    .booking-success p { white-space: pre-line; margin: 8px 0; }
+    .manage-intent { padding: 12px; margin-bottom: 16px; border-radius: 10px; background: #ece9e3; font-weight: 700; }
     .notice-text { font-size: 16px; color: #4f4b46; margin-top: 8px; line-height: 1.6; background: #f3f1ed; padding: 16px 18px; border-radius: 12px; }
     .important-notice { background: var(--ink); color: #fff; border-radius: 16px; padding: 19px 21px; margin-bottom: 34px; line-height: 1.55; position: relative; }
     .important-notice strong { display: block; font-size: 18px; margin-bottom: 3px; }
@@ -119,6 +128,18 @@
     <a href="#manageReservation">기존 예약 조회·변경·취소</a>
   </div>
   
+  <section class="booking-success" id="bookingSuccess" role="status" tabindex="-1" hidden>
+    <h2 id="bookingSuccessTitle">예약이 접수되었습니다.</h2>
+    <p id="bookingSuccessDetails"></p>
+    <p id="bookingEmailStatus"></p>
+    <p>방문이 어려우시면 미리 변경·취소해 주세요. 당일 취소·지각은 예약한 매장으로 연락해 주세요.</p>
+    <div class="reservation-actions">
+      <a class="btn-small primary" href="#manageReservation">예약 내용 확인</a>
+      <a class="btn-small" href="?manageAction=change#manageReservation">방문 일정 변경</a>
+      <a class="btn-small danger" href="?manageAction=cancel#manageReservation">예약 취소</a>
+    </div>
+  </section>
+
   <form id="reservationForm">
     <div class="edit-banner" id="editBanner" hidden>
       <strong>기존 예약을 변경하는 중입니다.</strong>
@@ -138,7 +159,7 @@
     </div>
 
     <div class="form-group">
-      <label class="section-title" for="email">이메일 주소 <span class="title-hint">예약 확인·변경·취소 안내 메일을 보내드립니다.</span></label>
+      <label class="section-title" for="email">이메일 주소 <span class="title-hint">예약 확인과 방문 전날 안내 메일을 보내드립니다.</span></label>
       <input type="email" id="email" placeholder="example@email.com" autocomplete="email" inputmode="email" required>
     </div>
 
@@ -246,8 +267,17 @@
       <textarea id="memo" placeholder="원하시는 침대 사이즈나 특별한 요청사항이 있다면 적어주세요."></textarea>
     </div>
 
+    <section class="visit-promise" aria-labelledby="promiseTitle">
+      <h2 id="promiseTitle">고객님을 위해 1시간을 준비합니다.</h2>
+      <p>예약 시간에는 담당자가 고객님의 상담과 제품 체험을 준비합니다. 연락 없는 미방문은 다른 고객님의 체험 기회를 줄이게 됩니다.</p>
+      <p>방문이 어려우시면 다른 고객님이 이용하실 수 있도록 미리 예약을 변경하거나 취소해 주세요. 당일 취소 또는 지각 시에는 예약한 매장으로 연락해 주세요.</p>
+      <label class="promise-check" for="visitPromise">
+        <input type="checkbox" id="visitPromise" required>
+        <span>[필수] 예약 시간을 지키고, 방문이 어려울 경우 미리 변경·취소하겠습니다.</span>
+      </label>
+    </section>
     <div class="notice-text">
-      신청과 동시에 예약이 접수되며 별도의 확정 연락은 드리지 않습니다. 입력하신 이메일로 예약 내용과 확인·변경·취소 링크를 보내드립니다.
+      신청 즉시 예약이 접수됩니다. 입력하신 이메일로 예약 내용과 확인·변경·취소 링크를 보내드리며, 방문 전날 오전에도 안내드립니다.
     </div>
 
     <button type="submit" class="btn-submit" id="submitBtn">예약 신청하기</button>
@@ -256,6 +286,7 @@
   <section class="manage-panel" id="manageReservation" aria-labelledby="manageTitle">
     <h3 id="manageTitle">내 예약 조회·변경·취소</h3>
     <p>예약할 때 입력한 성함과 연락처로 예정된 예약을 조회할 수 있습니다.</p>
+    <div class="manage-intent" id="manageIntent" hidden></div>
     <form id="lookupForm">
       <div class="lookup-grid">
         <div class="form-group">
@@ -274,226 +305,25 @@
   </section>
 </div>
 
-<script type="text/plain" id="legacyReservationScript">
-  // 🚨 아래 주소는 대표님의 구글 앱스 스크립트 웹앱 URL로 꼭 변경해주세요!
-  const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6BNSJXaL1FKdodWEsE4vMREDONPqaDqp3AB-lOfNISAygDf4MAqVLUzLN9VExVU4M/exec";
-
-  // 과거 날짜 예약 방지
-  const dateInput = document.getElementById('date');
-  const today = new Date().toISOString().split("T")[0];
-  dateInput.min = today;
-
-  const timeSelect = document.getElementById('time');
-  const showroomRadios = document.querySelectorAll('input[name="showroom"]');
-
-  // 💡 법정 공휴일 판별 함수 (주말은 지점마다 규칙이 달라 아래 개별로직에서 처리합니다)
-  const isHoliday = (dateObj) => {
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const dd = String(dateObj.getDate()).padStart(2, '0');
-    const mmdd = `${mm}-${dd}`;
-    
-    // 신정, 삼일절, 어린이날, 현충일, 광복절, 개천절, 한글날, 성탄절
-    const publicHolidays = ["01-01", "03-01", "05-05", "06-06", "08-15", "10-03", "10-09", "12-25"];
-    return publicHolidays.includes(mmdd);
-  };
-
-  // 💡 매장별 영업시간 및 휴무일 동적 처리 (오픈 시간 & 마감 시간 계산)
-  const generateTimeOptions = (bookedTimes = []) => {
-    timeSelect.innerHTML = '<option value="" disabled selected>원하시는 시간을 선택해주세요</option>';
-    
-    const selectedShowroom = document.querySelector('input[name="showroom"]:checked')?.value;
-    const selectedDateStr = dateInput.value;
-    if (!selectedShowroom || !selectedDateStr) return;
-
-    const dateObj = new Date(selectedDateStr);
-    const day = dateObj.getDay(); // 0:일, 1:월, 2:화, 3:수, 4:목, 5:금, 6:토
-    const isHoli = isHoliday(dateObj);
-
-    let openHour = 10; // 기본 오픈시간
-    let closeHour = 20; // 기본 종료시간
-
-    // 매장별 개별 조건 세팅
-    switch(selectedShowroom) {
-      case "삼성점(봉은사역)":
-        openHour = 10;
-        closeHour = (day >= 1 && day <= 5) ? 21 : 20.5; // 월~금 21:00, 토~일 20:30
-        break;
-
-      case "압구정점":
-        openHour = 10;
-        if (day === 0) closeHour = 20.5; // 일요일 20:30
-        else if (day === 5) closeHour = 20; // 금요일 20:00
-        else closeHour = 21; // 월~목, 토요일 21:00
-        break;
-
-      case "아주대 병원점(수원시 영통구)":
-        // 토(6), 일(0) 및 공휴일 전체 휴무 (-1로 설정)
-        if (day === 0 || day === 6 || isHoli) {
-          closeHour = -1;
-        } else {
-          openHour = 10;
-          closeHour = 18; // 평일 18:00
-        }
-        break;
-
-      case "회기점(동대문구)":
-        openHour = 10;
-        closeHour = (day === 0) ? 19 : 21; // 일요일만 19시 마감, 나머지 21시
-        break;
-
-      case "이브자리 양재(하나로마트 정문 우측)":
-        openHour = 9; // 09:00 오픈
-        closeHour = 20; // 매일 20:00 마감
-        break;
-
-      case "파주운정점(스타필드 빌리지)":
-        openHour = 10;
-        closeHour = 22; // 매일 22:00 마감
-        break;
-    }
-
-    // 휴무일 차단 처리
-    if (closeHour === -1) {
-      timeSelect.innerHTML = '<option value="" disabled selected>해당 날짜는 매장 휴무일입니다.</option>';
-      timeSelect.disabled = true;
-      return;
-    }
-
-    // 시간을 분 단위로 환산하여 1시간 단위 옵션 생성
-    const startMins = openHour * 60;
-    // 정시 단위 예약: 마감 1시간 전, 30분 마감 지점은 1시간 30분 전이 마지막 예약입니다.
-    const endMins = (closeHour * 60) - 60; 
-
-    for (let mins = startMins; mins <= endMins; mins += 60) {
-      let h = Math.floor(mins / 60);
-      let m = mins % 60;
-      let timeStr = String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0');
-
-      let option = document.createElement('option');
-      option.value = timeStr;
-      option.text = timeStr;
-
-      // 기존 30분 예약이 남아 있어도 새 1시간 예약과 겹치지 않도록 함께 대조합니다.
-      const halfHourLater = String(h).padStart(2, '0') + ":30";
-      if (bookedTimes.includes(timeStr) || bookedTimes.includes(halfHourLater)) {
-        option.disabled = true;
-        option.text = `${timeStr} (예약마감)`;
-      }
-      timeSelect.appendChild(option);
-    }
-  };
-
-  // 통신 및 이벤트 바인딩
-  const fetchBookedTimes = () => {
-    const selectedShowroom = document.querySelector('input[name="showroom"]:checked')?.value;
-    const selectedDate = dateInput.value;
-
-    if (!selectedShowroom || !selectedDate) {
-      timeSelect.disabled = true;
-      timeSelect.innerHTML = '<option value="" disabled selected>지점과 날짜를 먼저 선택해주세요</option>';
-      return;
-    }
-
-    timeSelect.disabled = true;
-    timeSelect.innerHTML = '<option value="" disabled selected>예약 가능 시간 확인 중...</option>';
-
-    fetch(`${GOOGLE_APP_SCRIPT_URL}?action=getBookedTimes&date=${selectedDate}&showroom=${encodeURIComponent(selectedShowroom)}`)
-      .then(response => response.json())
-      .then(data => {
-        generateTimeOptions(data.bookedTimes || []);
-        // 휴무일 처리(-1)가 안 된 정상 영업일만 select를 열어줌
-        if(timeSelect.options[0].text !== '해당 날짜는 매장 휴무일입니다.') {
-          timeSelect.disabled = false;
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        generateTimeOptions([]); 
-        if(timeSelect.options[0].text !== '해당 날짜는 매장 휴무일입니다.') {
-          timeSelect.disabled = false;
-        }
-      });
-  };
-
-  showroomRadios.forEach(radio => radio.addEventListener('change', fetchBookedTimes));
-  dateInput.addEventListener('change', fetchBookedTimes);
-
-  // 예약 변경·취소 시 선택한 매장의 연락처 페이지를 안내합니다.
-  const showroomMapUrls = {
-    "삼성점(봉은사역)": "https://naver.me/FbVBWSQz",
-    "압구정점": "https://naver.me/5PVXL3GU",
-    "아주대 병원점(수원시 영통구)": "https://naver.me/FY3Odocw",
-    "회기점(동대문구)": "https://naver.me/FK0NVfhW",
-    "이브자리 양재(하나로마트 정문 우측)": "https://naver.me/FRoQ1AYk",
-    "파주운정점(스타필드 빌리지)": "https://naver.me/Ffsewkgu"
-  };
-  const manageShowroom = document.getElementById('manageShowroom');
-  const contactShowroomBtn = document.getElementById('contactShowroomBtn');
-
-  manageShowroom.addEventListener('change', () => {
-    contactShowroomBtn.disabled = !showroomMapUrls[manageShowroom.value];
-  });
-
-  contactShowroomBtn.addEventListener('click', () => {
-    const mapUrl = showroomMapUrls[manageShowroom.value];
-    if (mapUrl) window.open(mapUrl, '_blank', 'noopener,noreferrer');
-  });
-
-  // 예약 신청 서브밋
-  document.getElementById('reservationForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const selectedShowroom = document.querySelector('input[name="showroom"]:checked');
-    if(!selectedShowroom) {
-      alert("방문하실 지점을 선택해주세요.");
-      return;
-    }
-
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.innerText = '예약 접수 중...';
-    submitBtn.disabled = true;
-
-    const requestData = {
-      name: document.getElementById('name').value,
-      phone: document.getElementById('phone').value,
-      showroom: selectedShowroom.value,
-      date: document.getElementById('date').value,
-      time: document.getElementById('time').value,
-      memo: document.getElementById('memo').value
-    };
-
-    fetch(GOOGLE_APP_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(requestData),
-      headers: { 'Content-Type': 'text/plain' } 
-    })
-    .then(response => response.json())
-    .then(data => {
-      if(data.result === 'success') {
-        alert('성공적으로 예약이 접수되었습니다!\n\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.');
-        document.getElementById('reservationForm').reset();
-        fetchBookedTimes(); 
-      } else {
-        alert('예약 접수 중 오류가 발생했습니다. 다시 시도해주세요.');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
-    })
-    .finally(() => {
-      submitBtn.innerText = '예약 신청하기';
-      submitBtn.disabled = false;
-    });
-  });
-</script>
-
 <script>
   const GOOGLE_APP_SCRIPT_URL_V2 = "https://script.google.com/macros/s/AKfycbw6BNSJXaL1FKdodWEsE4vMREDONPqaDqp3AB-lOfNISAygDf4MAqVLUzLN9VExVU4M/exec";
   const reservationForm = document.getElementById('reservationForm');
   const nameInput = document.getElementById('name');
   const phoneInput = document.getElementById('phone');
   const emailInput = document.getElementById('email');
+  const visitPromiseInput = document.getElementById('visitPromise');
+  const bookingSuccess = document.getElementById('bookingSuccess');
+  const bookingSuccessTitle = document.getElementById('bookingSuccessTitle');
+  const bookingSuccessDetails = document.getElementById('bookingSuccessDetails');
+  const bookingEmailStatus = document.getElementById('bookingEmailStatus');
+  const manageIntent = document.getElementById('manageIntent');
+  const requestedManageAction = new URLSearchParams(window.location.search).get('manageAction');
+  if (requestedManageAction === 'change' || requestedManageAction === 'cancel') {
+    manageIntent.textContent = requestedManageAction === 'change'
+      ? '성함과 연락처로 예약을 조회한 뒤 「예약 변경」을 눌러 주세요.'
+      : '성함과 연락처로 예약을 조회한 뒤 「예약 취소」를 눌러 주세요. 최종 확인 후 취소됩니다.';
+    manageIntent.hidden = false;
+  }
   const dateInputV2 = document.getElementById('date');
   const timeSelectV2 = document.getElementById('time');
   const memoInput = document.getElementById('memo');
@@ -680,6 +510,8 @@
 
   const startEditingReservation = async (record) => {
     if (!lastLookupCredentials) return;
+    bookingSuccess.hidden = true;
+    visitPromiseInput.checked = false;
     editingReservation = record;
     nameInput.value = lastLookupCredentials.name;
     phoneInput.value = lastLookupCredentials.phone;
@@ -816,6 +648,8 @@
 
   reservationForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!reservationForm.reportValidity()) return;
+    bookingSuccess.hidden = true;
     const selectedShowroom = document.querySelector('input[name="showroom"]:checked');
     if (!selectedShowroom) {
       alert('방문하실 지점을 선택해 주세요.');
@@ -832,7 +666,8 @@
       date: dateInputV2.value,
       time: timeSelectV2.value,
       memo: memoInput.value,
-      pageUrl: getReservationManageUrl()
+      pageUrl: getReservationManageUrl(),
+      visitPromiseAccepted: visitPromiseInput.checked
     };
 
     if (wasEditing) {
@@ -848,18 +683,18 @@
       const data = await postToServer(requestData);
       if (data.result !== 'success') throw new Error(data.message || '요청 처리 중 오류가 발생했습니다.');
 
-      if (wasEditing) {
-        alert(data.customerEmailSent
-          ? '예약이 변경되었습니다.\n\n입력하신 이메일로 변경 안내를 보내드렸습니다.'
-          : '예약은 변경되었지만 안내 메일 발송에 실패했습니다.\n입력한 이메일 주소를 확인해 주세요.');
-        resetReservationForm();
-        await lookupReservationsV2();
-      } else {
-        alert(data.customerEmailSent
-          ? '성공적으로 예약이 접수되었습니다!\n\n입력하신 이메일로 예약 확인 메일을 보내드렸습니다.\n확정 연락은 따로 드리지 않으니, 신청하신 일정에 맞춰 방문해 주세요.'
-          : '예약은 정상 접수되었지만 안내 메일 발송에 실패했습니다.\n입력한 이메일 주소를 확인해 주세요.');
-        resetReservationForm();
-      }
+      bookingSuccessTitle.textContent = wasEditing ? '예약이 변경되었습니다.' : '예약이 접수되었습니다.';
+      bookingSuccessDetails.textContent = `${requestData.showroom}\n${requestData.date} ${requestData.time} · 상담 및 체험 약 1시간`;
+      bookingEmailStatus.textContent = data.customerEmailSent
+        ? `안내 메일을 ${requestData.email}로 보내드렸습니다. 메일이 보이지 않으면 스팸함도 확인해 주세요.`
+        : '예약은 정상 처리되었습니다. 안내 메일을 보내지 못했으므로 위 일정을 저장하고, 아래에서 예약을 확인해 주세요.';
+      manageNameInput.value = requestData.name;
+      managePhoneInput.value = requestData.phone;
+      resetReservationForm();
+      bookingSuccess.hidden = false;
+      bookingSuccess.focus({ preventScroll: true });
+      bookingSuccess.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (wasEditing) await lookupReservationsV2();
       await fetchBookedTimesV2();
     } catch (error) {
       alert(error.message || '네트워크 오류가 발생했습니다. 다시 시도해 주세요.');
