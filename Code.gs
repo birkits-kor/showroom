@@ -1,6 +1,6 @@
 var NOTIFY_EMAIL = PropertiesService.getScriptProperties().getProperty("NOTIFY_EMAIL") || "";
 var CANCELLED_PREFIX = "[취소] ";
-var SERVICE_VERSION = "2026-10-19-no-show-v1";
+var SERVICE_VERSION = "2026-10-21-unified-mail-v1";
 var RESERVATION_SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("RESERVATION_SPREADSHEET_ID") || "";
 var RESERVATION_SHEET_NAME = "시트1";
 var RESERVATION_PAGE_URL = "https://birkits-kor.github.io/showroom/";
@@ -96,24 +96,7 @@ function createReservation(data) {
     ]);
     setNoShowCountFormula(sheet, sheet.getLastRow());
 
-    var manageUrl = resolveReservationManageUrl(data.pageUrl);
-    sendNotification(
-      "[버킷츠] 새로운 쇼룸 예약이 접수되었습니다!",
-      "버킷츠 쇼룸에 새로운 방문 예약이 접수되었습니다.\n\n" +
-      "👤 고객명: " + data.name + "\n" +
-      "📞 연락처: " + data.phone + "\n" +
-      "🏢 방문지점: " + data.showroom + "\n" +
-      "⏰ 방문일정: " + data.date + " " + data.time + "\n" +
-      "📝 남긴말씀: " + (data.memo ? data.memo : "없음") + "\n\n" +
-      "🔗 예약 확인·수정·취소 링크:\n" +
-      (manageUrl || "예약 페이지 주소를 확인해 주세요.") + "\n"
-    );
-
-    var customerEmailSent = sendCustomerNotification(
-      normalizeEmail(data.email),
-      "[버킷츠] 쇼룸 방문 예약이 접수되었습니다.",
-      buildCustomerMessage("created", data)
-    );
+    var customerEmailSent = sendReservationNotifications("created", data);
 
     return jsonResponse({ result: "success", action: "created", customerEmailSent: customerEmailSent });
   } finally {
@@ -199,25 +182,10 @@ function updateReservation(data) {
     }
     setNoShowCountFormula(sheet, rowNumber);
 
-    sendNotification(
-      "[버킷츠] 쇼룸 예약이 변경되었습니다.",
-      "쇼룸 방문 예약이 온라인으로 변경되었습니다.\n\n" +
-      "👤 고객명: " + reservation.name + "\n" +
-      "📞 연락처: " + reservation.phone + "\n" +
-      "기존 일정: " + reservation.showroom + " / " + reservation.date + " " + reservation.time + "\n" +
-      "변경 일정: " + data.showroom + " / " + data.date + " " + data.time + "\n" +
-      "📝 남긴말씀: " + (data.memo ? data.memo : "없음") + "\n\n" +
-      "🔗 예약 확인·수정·취소 링크:\n" + resolveReservationManageUrl(data.pageUrl) + "\n"
-    );
-
-    var customerEmailSent = sendCustomerNotification(
-      normalizeEmail(data.email),
-      "[버킷츠] 쇼룸 방문 예약이 변경되었습니다.",
-      buildCustomerMessage("updated", {
-        name: reservation.name, showroom: data.showroom, date: data.date,
-        time: data.time, memo: data.memo
-      }, reservation)
-    );
+    var customerEmailSent = sendReservationNotifications("updated", {
+      name: reservation.name, phone: reservation.phone, email: normalizeEmail(data.email),
+      showroom: data.showroom, date: data.date, time: data.time, memo: data.memo
+    }, reservation);
 
     return jsonResponse({ result: "success", action: "updated", customerEmailSent: customerEmailSent });
   } finally {
@@ -251,21 +219,7 @@ function cancelReservation(data) {
     sheet.getRange(rowNumber, 6).setValue(safeSheetText(updatedMemo));
     sheet.getRange(rowNumber, 8).setValue("취소");
 
-    sendNotification(
-      "[버킷츠] 쇼룸 예약이 취소되었습니다.",
-      "쇼룸 방문 예약이 온라인으로 취소되었습니다.\n\n" +
-      "👤 고객명: " + reservation.name + "\n" +
-      "📞 연락처: " + reservation.phone + "\n" +
-      "🏢 방문지점: " + reservation.showroom + "\n" +
-      "⏰ 기존 일정: " + reservation.date + " " + reservation.time + "\n\n" +
-      "🔗 예약 확인·수정·취소 링크:\n" + resolveReservationManageUrl(data.pageUrl) + "\n"
-    );
-
-    var customerEmailSent = reservation.email ? sendCustomerNotification(
-      reservation.email,
-      "[버킷츠] 쇼룸 방문 예약이 취소되었습니다.",
-      buildCustomerMessage("cancelled", reservation)
-    ) : false;
+    var customerEmailSent = sendReservationNotifications("cancelled", reservation);
 
     return jsonResponse({ result: "success", action: "cancelled", customerEmailSent: customerEmailSent });
   } finally {
@@ -438,10 +392,24 @@ function getSheetTimeZone(sheet) {
 
 function sendNotification(subject, body) {
   try {
-    MailApp.sendEmail(NOTIFY_EMAIL, subject, body);
+    MailApp.sendEmail({
+      to: NOTIFY_EMAIL, subject: subject, body: body,
+      htmlBody: renderCustomerEmail(body), replyTo: NOTIFY_EMAIL, name: "버킷츠"
+    });
+    return true;
   } catch (error) {
     console.error("이메일 발송 실패: " + error.message);
+    return false;
   }
+}
+
+// 접수·수정·취소는 같은 본문과 HTML을 운영자와 고객에게 각각 보냅니다.
+function sendReservationNotifications(event, reservation, previous) {
+  var status = event === "updated" ? "수정" : event === "cancelled" ? "취소" : "접수";
+  var subject = "[버킷츠] 쇼룸 방문 예약 " + status + " 확인";
+  var body = buildCustomerMessage(event, reservation, previous);
+  sendNotification(subject, body);
+  return sendCustomerNotification(reservation.email, subject, body);
 }
 
 function sendCustomerNotification(toEmail, subject, body) {
@@ -455,7 +423,7 @@ function sendCustomerNotification(toEmail, subject, body) {
       body: body,
       htmlBody: renderCustomerEmail(body),
       replyTo: NOTIFY_EMAIL,
-      name: "버킷츠 쇼룸"
+      name: "버킷츠"
     });
     return true;
   } catch (error) {
@@ -510,22 +478,26 @@ function buildCustomerMessage(event, reservation, previous) {
   var title = event === "reminder" ? "내일은 버킷츠 쇼룸 방문 예약일입니다." :
     event === "updated" ? "버킷츠 쇼룸 방문 예약이 변경되었습니다." :
     event === "cancelled" ? "버킷츠 쇼룸 방문 예약이 취소되었습니다." : "버킷츠 쇼룸 방문 예약이 접수되었습니다.";
-  var body = "안녕하세요, " + cleanText(reservation.name) + "님.\n" + title + "\n\n";
-  if (previous) body += "기존 일정: " + previous.showroom + " / " + previous.date + " " + previous.time + "\n\n";
+  var body = title + "\n\n■ 신청 정보\n" +
+    "👤 고객명: " + cleanText(reservation.name) + "\n" +
+    "📞 연락처: " + cleanText(reservation.phone) + "\n" +
+    "✉️ 이메일: " + (normalizeEmail(reservation.email) || "미등록") + "\n";
+  if (previous) body += "기존 일정: " + previous.showroom + " / " + previous.date + " " + previous.time + "\n";
   body += "🏢 방문지점: " + reservation.showroom + "\n" +
     "⏰ " + (event === "cancelled" ? "취소 일정" : "방문일정") + ": " + reservation.date + " " + reservation.time + "\n";
   if (event !== "cancelled") body += "상담 및 제품 체험: 약 1시간\n";
   body += "📝 남긴말씀: " + (reservation.memo ? reservation.memo : "없음") + "\n\n";
   var mapUrl = SHOWROOM_MAP_URLS[reservation.showroom];
   if (mapUrl) body += "📍 매장 전화번호 확인·길찾기(네이버 지도):\n" + mapUrl + "\n\n";
-  body += "🔗 예약 확인·수정·취소 링크:\n" + links.view + "\n\n" +
+  body += "■ 신청 내역 확인·수정·취소\n" +
+    "예약 내용 확인:\n" + links.view + "\n\n" +
     "방문 일정 변경:\n" + links.change + "\n\n" +
     "예약 취소:\n" + links.cancel + "\n\n" +
     "예약할 때 입력하신 성함과 연락처로 조회하실 수 있습니다.\n";
   if (event === "cancelled") {
     body += "\n다음에 편하신 일정으로 다시 찾아 주세요.\n";
   } else {
-    body += "\n담당자가 고객님의 예약 시간을 비워두고 체험을 준비합니다.\n" +
+    body += "\n■ 이용 안내\n담당자가 고객님의 예약 시간을 비워두고 체험을 준비합니다.\n" +
       "방문이 어려우시면 다른 고객님이 이용하실 수 있도록 미리 변경하거나 취소해 주세요.\n" +
       "당일 취소 또는 지각 시에는 예약한 매장으로 미리 연락해 주세요.\n";
   }
@@ -538,15 +510,18 @@ function escapeEmailHtml(value) {
 }
 
 function renderCustomerEmail(body) {
-  var links = reservationMailLinks();
-  var text = escapeEmailHtml(body).replace(/https:\/\/[^\s<]+/g, function(url) {
+  return renderBirkitsEmail_(body);
+}
+
+// 이 함수는 세 신청 서비스에서 동일하게 유지합니다.
+function renderBirkitsEmail_(body) {
+  var escaped = String(body).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  var content = escaped.replace(/https:\/\/[^\s<]+/g, function(url) {
     return '<a href="' + url + '" style="color:#295a8f;word-break:break-all">' + url + '</a>';
-  }).replace(/\n/g, "<br>");
-  return '<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px;color:#161616;font-size:17px;line-height:1.7">' +
-    '<h1 style="font-size:24px">버킷츠 쇼룸 예약 안내</h1>' + text +
-    '<p style="margin-top:24px"><a style="display:block;padding:15px;margin-bottom:10px;background:#161616;color:#fff;text-align:center;text-decoration:none;border-radius:9px" href="' + links.view + '">예약 내용 확인</a>' +
-    '<a style="display:block;padding:15px;margin-bottom:10px;background:#ede8df;color:#161616;text-align:center;text-decoration:none;border-radius:9px" href="' + links.change + '">방문 일정 변경</a>' +
-    '<a style="display:block;padding:15px;border:1px solid #b74337;color:#a5352b;text-align:center;text-decoration:none;border-radius:9px" href="' + links.cancel + '">예약 취소</a></p></div>';
+  }).replace(/^■ (.+)$/gm, '<strong style="font-size:18px">■ $1</strong>').replace(/\n/g, "<br>");
+  return '<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px;background:#fff;color:#161616;font-size:17px;line-height:1.8;word-break:keep-all">' +
+    '<div style="font-size:22px;letter-spacing:5px;border-bottom:1px solid #d9d3c9;padding-bottom:16px;margin-bottom:20px">birkits</div>' + content + '</div>';
 }
 
 // 시트 준비 함수입니다. 매일 오전 9시 트리거는 Apps Script의 트리거 화면에서 등록합니다. 고객 메일은 발송하지 않습니다.
@@ -608,7 +583,7 @@ function sendTomorrowReservationReminders() {
         continue;
       }
       var reservation = {
-        name: cleanText(row[1]), showroom: cleanText(row[3]), date: parsed.date,
+        name: cleanText(row[1]), phone: cleanText(row[2]), showroom: cleanText(row[3]), date: parsed.date,
         time: parsed.time, email: normalizeEmail(row[6]), memo: cleanText(row[5])
       };
       var key = reservationReminderKey(reservation);
