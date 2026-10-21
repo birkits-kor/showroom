@@ -1,6 +1,6 @@
 var NOTIFY_EMAIL = PropertiesService.getScriptProperties().getProperty("NOTIFY_EMAIL") || "";
 var CANCELLED_PREFIX = "[취소] ";
-var SERVICE_VERSION = "2026-10-21-unified-mail-v1";
+var SERVICE_VERSION = "2026-10-21-direct-management-v2";
 var RESERVATION_SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("RESERVATION_SPREADSHEET_ID") || "";
 var RESERVATION_SHEET_NAME = "시트1";
 var RESERVATION_PAGE_URL = "https://birkits-kor.github.io/showroom/";
@@ -25,6 +25,8 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents || "{}");
     var action = data.action || "createReservation";
+    if (/^managed(Get|Update|Cancel)$/.test(action)) return jsonResponse(managementHandle_(data));
+    managementSecret_();
 
     if (action === "createReservation") return createReservation(data);
     if (action === "lookupReservation") return lookupReservation(data);
@@ -95,6 +97,8 @@ function createReservation(data) {
       "예약", "", "", new Date(), ""
     ]);
     setNoShowCountFormula(sheet, sheet.getLastRow());
+    data._managementRow=sheet.getLastRow();
+    data._managementToken=managementIssue_(sheet,data._managementRow,data.email);
 
     var customerEmailSent = sendReservationNotifications("created", data);
 
@@ -183,7 +187,7 @@ function updateReservation(data) {
     setNoShowCountFormula(sheet, rowNumber);
 
     var customerEmailSent = sendReservationNotifications("updated", {
-      name: reservation.name, phone: reservation.phone, email: normalizeEmail(data.email),
+      name: reservation.name, phone: reservation.phone, email: normalizeEmail(data.email), _managementRow:rowNumber,
       showroom: data.showroom, date: data.date, time: data.time, memo: data.memo
     }, reservation);
 
@@ -219,6 +223,7 @@ function cancelReservation(data) {
     sheet.getRange(rowNumber, 6).setValue(safeSheetText(updatedMemo));
     sheet.getRange(rowNumber, 8).setValue("취소");
 
+    reservation._managementRow=rowNumber;
     var customerEmailSent = sendReservationNotifications("cancelled", reservation);
 
     return jsonResponse({ result: "success", action: "cancelled", customerEmailSent: customerEmailSent });
@@ -464,17 +469,12 @@ function setNoShowCountFormula(sheet, rowNumber) {
   sheet.getRange(rowNumber, 12).setFormula(formula);
 }
 
-function reservationMailLinks() {
-  var base = resolveReservationManageUrl("").split("#")[0];
-  return {
-    view: base + "#manageReservation",
-    change: base + "?manageAction=change#manageReservation",
-    cancel: base + "?manageAction=cancel#manageReservation"
-  };
+function reservationMailLinks(reservation) {
+  return managementMailLinks_(reservation);
 }
 
 function buildCustomerMessage(event, reservation, previous) {
-  var links = reservationMailLinks();
+  var links = reservationMailLinks(reservation);
   var title = event === "reminder" ? "내일은 버킷츠 쇼룸 방문 예약일입니다." :
     event === "updated" ? "버킷츠 쇼룸 방문 예약이 변경되었습니다." :
     event === "cancelled" ? "버킷츠 쇼룸 방문 예약이 취소되었습니다." : "버킷츠 쇼룸 방문 예약이 접수되었습니다.";
@@ -493,7 +493,7 @@ function buildCustomerMessage(event, reservation, previous) {
     "예약 내용 확인:\n" + links.view + "\n\n" +
     "방문 일정 변경:\n" + links.change + "\n\n" +
     "예약 취소:\n" + links.cancel + "\n\n" +
-    "예약할 때 입력하신 성함과 연락처로 조회하실 수 있습니다.\n";
+    "본인 신청 전용 보안 링크입니다. 고객 정보 재입력 없이 이용할 수 있으며 다른 사람에게 공유하지 마세요.\n";
   if (event === "cancelled") {
     body += "\n다음에 편하신 일정으로 다시 찾아 주세요.\n";
   } else {
@@ -514,17 +514,7 @@ function renderCustomerEmail(body) {
 }
 
 // 이 함수는 세 신청 서비스에서 동일하게 유지합니다.
-function renderBirkitsEmail_(body) {
-  var escaped = String(body).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  var content = escaped.replace(/https:\/\/[^\s<]+/g, function(url) {
-    return '<a href="' + url + '" style="color:#295a8f;word-break:break-all">' + url + '</a>';
-  }).replace(/^■ (.+)$/gm, '<strong style="font-size:18px">■ $1</strong>').replace(/\n/g, "<br>");
-  return '<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px;background:#fff;color:#161616;font-size:17px;line-height:1.8;word-break:keep-all">' +
-    '<div style="font-size:22px;letter-spacing:5px;border-bottom:1px solid #d9d3c9;padding-bottom:16px;margin-bottom:20px">birkits</div>' + content + '</div>';
-}
 
-// 시트 준비 함수입니다. 매일 오전 9시 트리거는 Apps Script의 트리거 화면에서 등록합니다. 고객 메일은 발송하지 않습니다.
 function setupShowroomNoShowPrevention() {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -583,7 +573,7 @@ function sendTomorrowReservationReminders() {
         continue;
       }
       var reservation = {
-        name: cleanText(row[1]), phone: cleanText(row[2]), showroom: cleanText(row[3]), date: parsed.date,
+        name: cleanText(row[1]), phone: cleanText(row[2]), showroom: cleanText(row[3]), date: parsed.date, _managementRow:i+1,
         time: parsed.time, email: normalizeEmail(row[6]), memo: cleanText(row[5])
       };
       var key = reservationReminderKey(reservation);
@@ -625,4 +615,207 @@ function checkShowroomNoShowPrevention() {
   };
   console.log(JSON.stringify(result));
   return result;
+}
+
+var MANAGEMENT_SERVICE = "showroom";
+// 개별 신청 관리. 토큰에는 이름·전화번호·계좌번호를 넣지 않습니다.
+function managementConfig_() {
+  if (MANAGEMENT_SERVICE === 'showroom') return {base:RESERVATION_PAGE_URL,id:27,email:7,status:8,width:27,headers:{27:'신청 관리 ID'}};
+  if (MANAGEMENT_SERVICE === 'moving') return {base:CUSTOMER_PAGE_URL,id:13,email:23,status:28,cancelled:29,paid:30,bank:31,account:32,holder:33,refund:34,width:34,
+    headers:{28:'신청 상태',29:'취소 접수일시',30:'입금 여부(고객 신고)',31:'환불 은행',32:'환불 계좌번호',33:'환불 예금주',34:'환불 처리 상태'}};
+  return {base:APPLICATION_PAGE_URL,id:27,email:12,status:28,cancelled:29,paid:30,bank:31,account:32,holder:33,refund:34,width:34,
+    headers:{27:'신청 관리 ID',28:'신청 상태',29:'취소 접수일시',30:'입금 여부(고객 신고)',31:'환불 은행',32:'환불 계좌번호',33:'환불 예금주',34:'환불 처리 상태'}};
+}
+
+function managementSheet_() {
+  if (MANAGEMENT_SERVICE === 'showroom') return getReservationSheet();
+  if (MANAGEMENT_SERVICE === 'moving') return SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  return getUpgradeSheet_();
+}
+
+function managementText_(value) { return value == null ? '' : String(value).trim(); }
+function managementEmail_(row) { return managementText_(row[managementConfig_().email-1]).toLowerCase(); }
+function managementSafeCell_(value) { var text=managementText_(value); return /^[=+\-@]/.test(text)?"'"+text:text; }
+
+function managementEnsureLayout_(sheet) {
+  var c=managementConfig_(), max=sheet.getMaxColumns();
+  if (max<c.width) sheet.insertColumnsAfter(max,c.width-max);
+  Object.keys(c.headers).forEach(function(key) {
+    var col=Number(key), current=managementText_(sheet.getRange(1,col).getValue());
+    if (current && current!==c.headers[key]) throw new Error('관리용 '+col+'열에 기존 항목이 있습니다. 관리자에게 문의해 주세요.');
+    if (!current) {
+      var last=sheet.getLastRow();
+      if (last>1 && sheet.getRange(2,col,last-1,1).getValues().some(function(r){return managementText_(r[0])!=='';})) throw new Error('관리용 '+col+'열에 기존 데이터가 있습니다.');
+      sheet.getRange(1,col).setValue(c.headers[key]);
+      sheet.getRange(1,col).setFontWeight('bold').setWrap(true).setBackground('#ede8df');
+      sheet.setColumnWidth(col,col===c.account?190:150);
+      if (col===c.account) sheet.getRange(2,col,sheet.getMaxRows()-1,1).setNumberFormat('@');
+    }
+  });
+}
+
+// 배포 시 한 번 실행합니다. 고객 기록 변경·메일 발송 없이 열과 비공개 서명 키만 준비합니다.
+function initializeDirectManagement() {
+  var lock=LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    var sheet=managementSheet_();
+    if (!sheet) throw new Error('대상 신청 시트를 찾을 수 없습니다.');
+    managementEnsureLayout_(sheet);
+    var props=PropertiesService.getScriptProperties();
+    if (!props.getProperty('MANAGEMENT_SIGNING_SECRET')) props.setProperty('MANAGEMENT_SIGNING_SECRET',Utilities.getUuid()+Utilities.getUuid()+Utilities.getUuid());
+    SpreadsheetApp.flush();
+    var result={service:MANAGEMENT_SERVICE,ready:true,sheet:sheet.getName(),spreadsheetId:sheet.getParent().getId(),emailsSent:0};
+    console.log(JSON.stringify(result)); return result;
+  } finally {lock.releaseLock();}
+}
+
+function managementSecret_() {
+  var key=PropertiesService.getScriptProperties().getProperty('MANAGEMENT_SIGNING_SECRET');
+  if (!key) throw new Error('개별 관리 링크 설정이 준비되지 않았습니다. 관리자에게 문의해 주세요.');
+  return key;
+}
+function managementEnsureId_(sheet,rowNumber) {
+  managementEnsureLayout_(sheet);
+  var c=managementConfig_(), id=managementText_(sheet.getRange(rowNumber,c.id).getValue());
+  if (!id) {id=Utilities.getUuid();sheet.getRange(rowNumber,c.id).setValue(id);}
+  return id;
+}
+function managementBase64_(value) {return Utilities.base64EncodeWebSafe(value,Utilities.Charset.UTF_8).replace(/=+$/,'');}
+function managementSignature_(payload,email) {return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(MANAGEMENT_SERVICE+'|'+payload+'|'+email,managementSecret_(),Utilities.Charset.UTF_8)).replace(/=+$/,'');}
+function managementEqual_(a,b) {var x=a.length^b.length;for(var i=0;i<Math.max(a.length,b.length);i++)x|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return x===0;}
+function managementIssue_(sheet,rowNumber,expectedEmail) {
+  var c=managementConfig_(), email=managementText_(sheet.getRange(rowNumber,c.email).getValue()).toLowerCase();
+  if (expectedEmail!==undefined && email!==managementText_(expectedEmail).toLowerCase()) throw new Error('신청 이메일이 변경되었습니다. 최신 안내 메일을 확인해 주세요.');
+  var payload=managementBase64_(JSON.stringify({v:1,id:managementEnsureId_(sheet,rowNumber),exp:Date.now()+180*24*60*60*1000}));
+  return payload+'.'+managementSignature_(payload,email);
+}
+function managementAuthorize_(sheet,token) {
+  token=managementText_(token);
+  if (token.length>1600 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)) throw new Error('관리 링크가 올바르지 않습니다.');
+  var parts=token.split('.'), payload;
+  try {payload=JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString('UTF-8'));} catch(e){throw new Error('관리 링크가 올바르지 않습니다.');}
+  if (payload.v!==1 || typeof payload.id!=='string' || !/^[A-Za-z0-9_-]{12,100}$/.test(payload.id) || !Number.isFinite(payload.exp) || payload.exp<Date.now()) throw new Error('관리 링크가 만료되었거나 올바르지 않습니다. 최신 메일을 확인해 주세요.');
+  var c=managementConfig_(), last=sheet.getLastRow(), rows=last>1?sheet.getRange(2,1,last-1,c.width).getValues():[], found=0, raw;
+  for(var i=0;i<rows.length;i++) if(managementText_(rows[i][c.id-1])===payload.id){if(found)throw new Error('신청 관리 정보가 중복되어 관리자 확인이 필요합니다.');found=i+2;raw=rows[i];}
+  if (!found || !managementEqual_(parts[1],managementSignature_(parts[0],managementEmail_(raw)))) throw new Error('관리 링크가 올바르지 않거나 이메일 변경으로 만료되었습니다.');
+  return {rowNumber:found,row:raw};
+}
+function managementMailLinks_(data) {
+  var token=data._managementToken;
+  if (!token) {
+    if (!data._managementRow) throw new Error('개별 신청 관리 정보가 없습니다.');
+    token=managementIssue_(managementSheet_(),data._managementRow,data.email===undefined?data.customerEmail:data.email);
+  }
+  var base=managementConfig_().base.replace(/\/$/,'')+'/manage.html';
+  return {view:base+'?action=view#token='+token,change:base+'?action=edit#token='+token,cancel:base+'?action=cancel#token='+token};
+}
+function managementRefundText_(refund) {
+  if (!refund) return '';
+  if (!refund.paid) return '\n■ 취소·환불 안내\n입금 전으로 접수되었습니다. 입금 여부는 담당자가 확인합니다.\n';
+  var digits=managementText_(refund.account).replace(/\D/g,'');
+  return '\n■ 취소·환불 안내\n입금 완료(고객 신고) / 환불 접수 대기\n환불 은행: '+refund.bank+'\n환불 계좌: '+('*'.repeat(Math.max(0,digits.length-4))+digits.slice(-4))+'\n예금주: '+refund.holder+'\n입금 내역 확인 후 담당자가 환불 처리합니다. 자동 송금은 진행되지 않습니다.\n';
+}
+function managementStatus_(raw) {return MANAGEMENT_SERVICE==='showroom'?getReservationStatus(raw):(managementText_(raw[managementConfig_().status-1])||'신청');}
+function managementPublic_(sheet,n,raw) {
+  var c=managementConfig_(), status=managementStatus_(raw), data;
+  if (MANAGEMENT_SERVICE==='showroom') {
+    var parsed=parseDateTimeCell(raw[4],sheet);
+    data={name:raw[1],phone:raw[2],email:raw[6]||'',showroom:raw[3],date:parsed.date,time:parsed.time,memo:raw[5]||''};
+  } else if(MANAGEMENT_SERVICE==='moving') {
+    var display=sheet.getRange(n,1,1,c.width).getDisplayValues()[0];
+    data=rowToApplication_(display);
+    data.addressBefore=display[14]?(display[14]+' '+display[15]).trim():String(display[4]||'').split(' >> ')[0]||'';
+    data.addressAfter=display[16]?(display[16]+' '+display[17]).trim():String(display[4]||'').split(' >> ')[1]||'';
+    data.requestDate=display[2]||'';
+    var services=['full','assembly','disassembly','disassemblyTransport','transportAssembly','roomMove'];
+    data.serviceKey=''; services.forEach(function(key){if(getFeeSelection_({serviceKey:key,regionKey:'capital',bedConfigKey:'single'}).serviceName===data.serviceName)data.serviceKey=key;});
+    data.regionKey=data.regionName==='수도권'?'capital':'local';
+    data.bedConfigKey=data.bedConfigName==='S+S'?'sPlusS':data.bedConfigName==='SS+SS'?'ssPlusSs':'single';
+  } else data={name:raw[1],phone:raw[2],zipcode:raw[3],address:raw[4],detailAddress:raw[5],purchaseYear:raw[6],upgradeOption:raw[7],quantity:String(raw[8]),orderInfo:raw[9]||'',comments:raw[10]||'',email:raw[11]||''};
+  var editable=status!=='취소' && status!=='완료' && status!=='발송 완료';
+  if(MANAGEMENT_SERVICE==='showroom' && (data.date+' '+data.time)<Utilities.formatDate(new Date(),'Asia/Seoul','yyyy-MM-dd HH:mm')) editable=false;
+  var refund=null;
+  if(c.paid && raw[c.paid-1]) {var account=managementText_(raw[c.account-1]).replace(/\D/g,'');refund={paid:raw[c.paid-1]==='입금 완료(고객 신고)',bank:raw[c.bank-1]||'',accountMasked:account?'*'.repeat(Math.max(0,account.length-4))+account.slice(-4):'',holder:raw[c.holder-1]||'',status:raw[c.refund-1]||''};}
+  return {service:MANAGEMENT_SERVICE,rowId:n,status:status,editable:editable,data:data,refund:refund};
+}
+
+// 고객과 운영자 모두 같은 버튼·신청 전용 링크를 사용합니다. 텍스트 메일에도 전체 링크를 유지합니다.
+function renderBirkitsEmail_(body) {
+  function escape(value) {return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  var content=String(body).split('\n').map(function(line) {
+    var match=line.match(/^https:\/\/[^\s]+\/manage\.html\?action=(view|edit|cancel)#token=[A-Za-z0-9_.-]+$/);
+    if(match) {
+      var label={view:'신청 내용 확인',edit:'신청 내용 수정',cancel:'신청 취소'}[match[1]];
+      return '<a href="'+escape(line)+'" style="display:inline-block;background:'+(match[1]==='cancel'?'#fff':'#252620')+';color:'+(match[1]==='cancel'?'#8a3024':'#fff')+';border:1px solid #aaa394;border-radius:8px;padding:12px 24px;margin:4px 0 12px;text-decoration:none;font-size:18px;font-weight:bold">'+label+'</a>';
+    }
+    var safe=escape(line);
+    if(/^■ /.test(line))return '<strong style="font-size:19px">'+safe+'</strong>';
+    return safe.replace(/https:\/\/[^\s<]+/g,function(url){return '<a href="'+url+'" style="color:#295a8f;word-break:break-all">'+url+'</a>';});
+  }).join('<br>');
+  return '<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px;background:#fff;color:#161616;font-size:17px;line-height:1.8;word-break:keep-all"><div style="font-size:22px;letter-spacing:5px;border-bottom:1px solid #d9d3c9;padding-bottom:16px;margin-bottom:20px">birkits</div>'+content+'</div>';
+}
+
+function managementHandle_(request) {
+  var sheet=managementSheet_(), lock=LockService.getScriptLock(), mutation=request.action!=='managedGet';
+  if(mutation) lock.waitLock(10000);
+  try {
+    var owned=managementAuthorize_(sheet,request.token), n=owned.rowNumber, raw=owned.row;
+    var current=managementPublic_(sheet,n,raw);
+    if(request.action==='managedGet') return {result:'success',record:current};
+    if(request.action==='managedCancel' && current.status==='취소') return {result:'success',record:current,alreadyCancelled:true,customerEmailSent:false};
+    if(!current.editable) throw new Error('이미 처리되었거나 지난 일정으로 온라인 수정·취소가 불가능합니다. 담당자에게 문의해 주세요.');
+    var mail, fresh, token;
+    if(request.action==='managedUpdate') {
+      var p=request.data||{}, previous=current.data;
+      if(MANAGEMENT_SERVICE==='showroom') {
+        fresh={name:previous.name,phone:previous.phone,email:managementText_(p.email).toLowerCase(),showroom:p.showroom,date:p.date,time:p.time,memo:p.memo||'',visitPromiseAccepted:p.visitPromiseAccepted};
+        var error=validateReservationData(fresh); if(error) throw new Error(error);
+        if(hasSlotConflict(sheet,fresh.showroom,fresh.date,fresh.time,n)) throw new Error('선택한 시간에 다른 예약이 있습니다. 다른 시간을 선택해 주세요.');
+        sheet.getRange(n,4,1,4).setValues([[safeSheetText(fresh.showroom),safeSheetText(fresh.date+' '+fresh.time),safeSheetText(fresh.memo),safeSheetText(fresh.email)]]);
+        sheet.getRange(n,11).setValue(new Date());
+        if(reservationReminderKey(previous)!==reservationReminderKey(fresh))sheet.getRange(n,9,1,2).setValues([['','']]);
+        token=managementIssue_(sheet,n,fresh.email);fresh._managementToken=token;
+        mail={customerEmailSent:sendReservationNotifications('updated',fresh,previous)};
+      } else if(MANAGEMENT_SERVICE==='moving') {
+        fresh={}; ['depositTime','requestDate','isSecondHand','applicantName','applicantPhone','buyerName','buyerPhone','options','memo','addressBefore','addressAfter','addressBeforeBase','addressBeforeDetail','addressAfterBase','addressAfterDetail','customerEmail','serviceKey','regionKey','bedConfigKey'].forEach(function(key){fresh[key]=managementText_(p[key]);});
+        fresh.customerEmail=normalizeCustomerEmail_(fresh.customerEmail);validateApplicationData_(fresh,true);
+        var fee=formatFeeSummary_(getFeeSelection_(fresh));
+        sheet.getRange(n,2,1,11).setValues([[safeCell_(fresh.depositTime),safeCell_(fresh.requestDate),safeCell_(fresh.isSecondHand),safeCell_(combineAddress_(fresh.addressBefore,fresh.addressAfter)),safeCell_(fresh.applicantName),safeCell_(fresh.applicantPhone),safeCell_(fresh.buyerName||'생략(동일)'),safeCell_(fresh.buyerPhone||'생략(동일)'),safeCell_(fresh.options),safeCell_(fresh.memo),fee]]);
+        sheet.getRange(n,14,1,5).setValues([[new Date(),safeCell_(fresh.addressBeforeBase),safeCell_(fresh.addressBeforeDetail),safeCell_(fresh.addressAfterBase),safeCell_(fresh.addressAfterDetail)]]);
+        sheet.getRange(n,23).setValue(safeCell_(fresh.customerEmail));
+        token=managementIssue_(sheet,n,fresh.customerEmail);fresh._managementToken=token;
+        mail=sendApplicationEmails_('update',fresh,combineAddress_(fresh.addressBefore,fresh.addressAfter),new Date());
+      } else {
+        fresh={};['name','phone','zipcode','address','detailAddress','purchaseYear','upgradeOption','quantity','orderInfo','comments','email'].forEach(function(key){fresh[key]=managementText_(p[key]);});
+        fresh.email=normalizeEmail(fresh.email);
+        if(!fresh.name || String(fresh.phone).replace(/\D/g,'').length<10 || !isValidEmail(fresh.email) || !fresh.address || !fresh.detailAddress || !/^[1-3]$/.test(fresh.quantity))throw new Error('필수 신청 정보를 정확히 입력해 주세요.');
+        if(['2025년 이후','2024년 이전'].indexOf(fresh.purchaseYear)<0)throw new Error('구매 연도를 선택해 주세요.');
+        var basePrice=fresh.purchaseYear==='2025년 이후'?15000:50000;
+        var allowed=['자가교체('+basePrice.toLocaleString('ko-KR')+')','방문-수도권('+(basePrice+30000).toLocaleString('ko-KR')+')','방문-지방('+(basePrice+60000).toLocaleString('ko-KR')+')'];
+        if(allowed.indexOf(fresh.upgradeOption)<0)throw new Error('업그레이드 방법을 다시 선택해 주세요.');
+        fresh.phone=formatPhone(fresh.phone);fresh.zipcode=formatZip(fresh.zipcode);
+        sheet.getRange(n,1,1,12).setValues([[new Date(),managementSafeCell_(fresh.name),managementSafeCell_(fresh.phone),managementSafeCell_(fresh.zipcode),managementSafeCell_(fresh.address),managementSafeCell_(fresh.detailAddress),fresh.purchaseYear,fresh.upgradeOption,fresh.quantity,managementSafeCell_(fresh.orderInfo),managementSafeCell_(fresh.comments),safeEmailCell(fresh.email)]]);
+        token=managementIssue_(sheet,n,fresh.email);fresh._managementToken=token;
+        mail=sendUpgradeApplicationEmails_('update',fresh,fresh.phone,fresh.zipcode,fresh.email);
+      }
+    } else if(request.action==='managedCancel') {
+      if(request.confirmCancel!==true)throw new Error('취소 내용을 확인한 뒤 취소 확정 버튼을 눌러 주세요.');
+      var c=managementConfig_(), refund=null;
+      if(MANAGEMENT_SERVICE!=='showroom') {
+        if(request.payment!=='paid' && request.payment!=='unpaid')throw new Error('입금 여부를 선택해 주세요.');
+        refund={paid:request.payment==='paid',bank:'',account:'',holder:''};
+        if(refund.paid) {
+          refund.bank=managementText_(request.refundBank);refund.account=managementText_(request.refundAccount).replace(/[\s-]/g,'');refund.holder=managementText_(request.refundHolder);
+          if(!refund.bank || refund.bank.length>40 || !/^\d{6,30}$/.test(refund.account) || !refund.holder || refund.holder.length>40 || /[\r\n]/.test(refund.bank+refund.holder))throw new Error('입금한 신청은 은행명·계좌번호·예금주를 모두 정확히 입력해야 취소할 수 있습니다.');
+        }
+        sheet.getRange(n,c.status,1,7).setValues([['취소',new Date(),refund.paid?'입금 완료(고객 신고)':'입금 전(고객 신고)',managementSafeCell_(refund.bank),refund.account,managementSafeCell_(refund.holder),refund.paid?'환불 대기':'입금 확인 필요']]);
+      } else {sheet.getRange(n,4).setValue(CANCELLED_PREFIX+current.data.showroom);sheet.getRange(n,8).setValue('취소');}
+      token=managementIssue_(sheet,n,managementEmail_(raw));fresh=current.data;fresh._managementToken=token;fresh._refund=refund;
+      if(MANAGEMENT_SERVICE==='showroom')mail={customerEmailSent:sendReservationNotifications('cancelled',fresh)};
+      else if(MANAGEMENT_SERVICE==='moving')mail=sendApplicationEmails_('cancel',fresh,'',new Date());
+      else mail=sendUpgradeApplicationEmails_('cancel',fresh,fresh.phone,fresh.zipcode,fresh.email);
+    } else throw new Error('지원하지 않는 관리 요청입니다.');
+    SpreadsheetApp.flush();
+    return {result:'success',record:managementPublic_(sheet,n,sheet.getRange(n,1,1,managementConfig_().width).getValues()[0]),token:token,customerEmailSent:Boolean(mail&&mail.customerEmailSent)};
+  } finally {if(mutation)lock.releaseLock();}
 }

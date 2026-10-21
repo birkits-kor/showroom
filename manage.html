@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://script.google.com https://script.googleusercontent.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>쇼룸 방문 예약 확인 · 수정 · 취소 | 버킷츠</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f2ed;color:#22251f;font:18px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;word-break:keep-all}main{max-width:720px;margin:0 auto;padding:32px 20px 60px}header{margin-bottom:28px}.brand{font-size:24px;letter-spacing:7px;font-weight:600}h1{font-size:30px;line-height:1.35;margin:20px 0 12px}h2{font-size:23px;margin:0 0 20px}p{margin:10px 0}.muted,.hint{color:#62665d;font-size:16px}.card{padding:26px;background:#fff;border:1px solid #dedbd2;border-radius:18px;margin:18px 0}.notice{background:#ece9df;border-radius:12px;padding:18px}.error{color:#8b271e;background:#fff0eb;border:1px solid #ebc6ba;padding:18px;border-radius:12px;white-space:pre-line}.success{background:#e9f1e8;border:1px solid #c5d8c0;padding:18px;border-radius:12px}label{display:block;font-weight:600;margin-bottom:8px}input,select,textarea,button{font:inherit}input:not([type=radio]):not([type=checkbox]),select,textarea{display:block;width:100%;min-height:56px;border:1px solid #aaa99e;border-radius:9px;padding:12px;color:#20231e;background:white}input[readonly],textarea[readonly],select:disabled{background:#f5f5f0;color:#35382f;opacity:1}textarea{min-height:110px;resize:vertical}.field{margin-bottom:23px}.row{display:flex;gap:14px}.row>*{flex:1;min-width:0}button{min-height:56px;border:1px solid #293025;border-radius:10px;background:#293025;color:white;padding:13px 22px;font-weight:600;cursor:pointer}button.secondary{background:#fff;color:#293025}button.danger{background:#fff;color:#8b3024;border-color:#b06d60}button:disabled{opacity:.5;cursor:wait}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.actions button{flex:1;min-width:140px}.full{width:100%}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #728462;outline-offset:3px}.choice{font-weight:400;display:flex;align-items:flex-start;gap:12px;background:#f5f5f0;padding:16px;border:1px solid #d7d9cf;border-radius:10px;margin:12px 0;cursor:pointer}.choice input{width:24px;height:24px;flex:0 0 24px;margin:3px 0}.req{color:#8b3024;font-size:16px}.pill{display:inline-block;border-radius:100px;background:#e8eadd;padding:4px 13px;font-size:16px}.statusbar{margin-bottom:18px}a{color:#355334;text-underline-offset:4px}.summaryline{padding:12px 0;border-bottom:1px solid #e6e6de}.summaryline span{display:block;color:#62665d;font-size:16px}.summaryline strong{font-size:19px;font-weight:500;white-space:pre-wrap;overflow-wrap:anywhere}[hidden]{display:none!important}footer{font-size:15px;color:#65695f;margin:28px 0 0}.secure{font-size:16px;color:#5e6558}.loading{padding:28px;text-align:center}@media(max-width:520px){main{padding:24px 16px 40px}.card{padding:21px 18px}h1{font-size:27px}.row{display:block}.actions button{min-width:100%;width:100%}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s}}
+</style>
+</head>
+<body>
+<main>
+ <header><div class="brand">birkits</div><h1>쇼룸 방문 예약</h1><p class="secure">메일을 받으신 고객님 전용 관리 페이지입니다.<br>이름과 연락처를 다시 입력하지 않아도 됩니다.</p></header>
+ <div id="feedback" role="status" aria-live="polite"></div>
+ <div id="loading" class="card loading">신청 내용을 불러오고 있습니다.</div>
+ <section id="application" hidden>
+  <div class="statusbar">현재 상태 <span id="status" class="pill"></span></div>
+  <nav class="actions" aria-label="신청 관리"><button id="viewButton" type="button" class="secondary">신청 내용 확인</button><button id="editButton" type="button">신청 내용 수정</button><button id="cancelButton" type="button" class="danger">신청 취소</button></nav>
+  <section id="viewPanel" class="card"><h2>신청하신 내용</h2><div id="summary"></div></section>
+  <form id="editForm" class="card" hidden><h2>신청 내용 수정</h2><p class="hint">기존 내용이 입력되어 있습니다. 변경할 부분만 수정해 주세요.</p><div id="fields"></div><button class="full" id="saveButton" type="submit">변경 내용 저장</button></form>
+  <form id="cancelForm" class="card" hidden><h2>신청 취소</h2><p>아래 신청이 취소됩니다. 신청 내용과 입금 여부를 확인해 주세요.</p><div id="cancelSummary" class="notice"></div>
+   <fieldset id="paymentFields" style="border:0;padding:0;margin:24px 0"><legend style="font-weight:600">입금하셨나요? <span class="req">필수</span></legend>
+    <label class="choice"><input type="radio" name="payment" value="paid" required><span>입금했습니다.<br><span class="hint">환불받으실 계좌를 입력해 주세요.</span></span></label>
+    <label class="choice"><input type="radio" name="payment" value="unpaid" required><span>아직 입금하지 않았습니다.</span></label>
+    <div id="refundFields" hidden>
+     <p class="notice">입금한 신청은 환불계좌가 있어야 취소할 수 있습니다. 실제 입금 내역 확인 후 담당자가 환불 처리합니다.</p>
+     <div class="field"><label for="refundBank">은행명 <span class="req">필수</span></label><input id="refundBank" autocomplete="off" maxlength="40" placeholder="예: 국민은행"></div>
+     <div class="field"><label for="refundAccount">환불 계좌번호 <span class="req">필수</span></label><input id="refundAccount" inputmode="numeric" autocomplete="off" maxlength="40" placeholder="숫자만 입력해 주세요"></div>
+     <div class="field"><label for="refundHolder">예금주 <span class="req">필수</span></label><input id="refundHolder" autocomplete="off" maxlength="40" placeholder="통장에 표시된 예금주명"></div>
+     <p class="hint">환불 처리를 위해 은행명·계좌번호·예금주를 수집합니다. 전체 계좌번호는 비공개 신청 시트에만 저장하며, 안내 메일에는 끝자리만 표시합니다. 환불 처리와 관련 법령상 보관 의무에 필요한 기간 동안만 보관합니다.</p>
+    </div>
+   </fieldset>
+   <label class="choice"><input id="cancelConfirm" type="checkbox" required><span>신청 취소 내용을 확인했습니다.<span id="refundConfirmText"> 입금한 경우 환불 처리를 위한 계좌정보 제공에 동의합니다.</span></span></label>
+   <button class="full danger" id="confirmCancelButton" type="submit">확인했습니다. 신청 취소 확정</button>
+  </form>
+  <section id="refundResult" class="card" hidden><h2>취소·환불 접수 내용</h2><div id="refundSummary"></div></section>
+ </section>
+ <footer>이 링크로 신청 정보를 확인하고 변경할 수 있습니다. 다른 사람에게 공유하지 마세요.<br>문제가 있으시면 기존 안내 메일의 매장 또는 고객센터로 문의해 주세요.</footer>
+</main>
+<script>
+'use strict';
+const SERVICE='showroom', API='https://script.google.com/macros/s/AKfycbw6BNSJXaL1FKdodWEsE4vMREDONPqaDqp3AB-lOfNISAygDf4MAqVLUzLN9VExVU4M/exec';
+const $=id=>document.getElementById(id);
+let token=new URLSearchParams(location.hash.slice(1)).get('token')||'', record=null, mode=new URLSearchParams(location.search).get('action')||'view', busy=false;
+const labels={name:'성함',phone:'연락처',email:'이메일',showroom:'방문 매장',date:'방문 날짜',time:'방문 시간',memo:'추가 전달사항',applicantName:'보내는 분 성함',applicantPhone:'보내는 분 연락처',buyerName:'받는 분 성함 (동일하면 비워 주세요)',buyerPhone:'받는 분 연락처 (동일하면 비워 주세요)',customerEmail:'이메일',depositTime:'입금 시간 및 입금자명 (입금 전이면 미입금)',requestDate:'이사·설치 요청 기간',isSecondHand:'중고 구매 여부',addressBefore:'출발지 주소',addressAfter:'도착지 주소',options:'구매 옵션·사이즈·수량',serviceKey:'신청 서비스',regionKey:'지역',bedConfigKey:'침대 구성',zipcode:'우편번호',address:'기본 주소',detailAddress:'상세 주소',purchaseYear:'구매 연도',upgradeOption:'업그레이드 방법',quantity:'신청 수량',orderInfo:'구매처·주문번호',comments:'추가 전달사항'};
+const showroomNames=['삼성점(봉은사역)','압구정점','아주대 병원점(수원시 영통구)','회기점(동대문구)','이브자리 양재(하나로마트 정문 우측)','파주운정점(스타필드 빌리지)'];
+const services={full:['전체 (분해 + 운반 + 조립)',255000,355000],assembly:['조립만',95000,125000],disassembly:['분해만',85000,135000],disassemblyTransport:['분해 + 운반',185000,255000],transportAssembly:['운반 + 조립',225000,325000],roomMove:['분해 + 재조립 (같은 집 다른 방 이동 설치)',180000,260000]};
+const fieldsByService={showroom:['name','phone','email','showroom','date','time','memo'],moving:['serviceKey','regionKey','bedConfigKey','applicantName','applicantPhone','customerEmail','buyerName','buyerPhone','depositTime','requestDate','isSecondHand','addressBefore','addressAfter','options','memo'],customer:['name','phone','email','zipcode','address','detailAddress','purchaseYear','upgradeOption','quantity','orderInfo','comments']};
+const optional=new Set(['memo','buyerName','buyerPhone','orderInfo','comments']);
+function feedback(message,type='error'){ $('feedback').className=type;$('feedback').textContent=message;$('feedback').hidden=!message; }
+function setBusy(value){busy=value;document.querySelectorAll('button').forEach(b=>b.disabled=value);if(!value&&record){$('editButton').disabled=$('cancelButton').disabled=!record.editable;}}
+async function api(action,extra={}) {
+ const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),45000);
+ try {const response=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,token,...extra}),credentials:'omit',cache:'no-store',redirect:'follow',signal:controller.signal});if(!response.ok)throw Error('서버에 연결하지 못했습니다.');const result=await response.json();if(result.result!=='success')throw Error(result.message||result.error||'처리하지 못했습니다.');return result;}
+ catch(error){if(error.name==='AbortError')throw Error('응답 확인이 지연되고 있습니다. 중복 요청하지 마시고 잠시 후 이 페이지를 새로고침하여 처리 상태를 확인해 주세요.');throw error;}finally{clearTimeout(timer);}
+}
+function addSummary(parent,label,value){if(value===undefined||value===null||value==='')return;const div=document.createElement('div');div.className='summaryline';const span=document.createElement('span');span.textContent=label;const strong=document.createElement('strong');strong.textContent=String(value);div.append(span,strong);parent.append(div);}
+function displayed(key,value){if(key==='serviceKey')return services[value]?.[0]||record.data.serviceName||value;if(key==='regionKey')return {capital:'수도권',local:'지방'}[value]||value;if(key==='bedConfigKey')return {single:'일반',sPlusS:'S+S',ssPlusSs:'SS+SS'}[value]||value;return value;}
+function render(){
+ $('loading').hidden=true;$('application').hidden=false;$('status').textContent=record.status;$('summary').replaceChildren();
+ for(const key of fieldsByService[SERVICE])addSummary($('summary'),labels[key],displayed(key,record.data[key]));
+ $('cancelSummary').textContent=SERVICE==='showroom'?`${record.data.name} / ${record.data.showroom}\n${record.data.date} ${record.data.time}`:SERVICE==='moving'?`${record.data.applicantName} / ${record.data.applicantPhone}\n${record.data.requestDate}`:`${record.data.name} / ${record.data.phone}\n${record.data.upgradeOption} / ${record.data.quantity}개`;
+ $('cancelSummary').style.whiteSpace='pre-line';$('refundResult').hidden=!record.refund;$('refundSummary').replaceChildren();
+ if(record.refund){const f=record.refund;addSummary($('refundSummary'),'입금 여부',f.paid?'입금 완료 (고객 신고)':'입금 전 (고객 신고)');if(f.paid){addSummary($('refundSummary'),'은행',f.bank);addSummary($('refundSummary'),'계좌번호',f.accountMasked);addSummary($('refundSummary'),'예금주',f.holder);}addSummary($('refundSummary'),'처리 상태',f.status);}
+ setBusy(false);if(!record.editable)mode='view';setMode(mode);
+}
+function setMode(value){mode=['view','edit','cancel'].includes(value)?value:'view';if(!record.editable)mode='view';$('viewPanel').hidden=mode!=='view';$('editForm').hidden=mode!=='edit';$('cancelForm').hidden=mode!=='cancel';if(mode==='edit')buildFields();if(mode==='cancel'){$('cancelConfirm').checked=false;document.querySelectorAll('[name=payment]').forEach(i=>i.checked=false);paymentChanged();}history.replaceState(null,'',`?action=${mode}#token=${encodeURIComponent(token)}`);}
+function makeField(key,type='text',choices){
+ const group=document.createElement('div');group.className='field';const label=document.createElement('label');label.htmlFor='field_'+key;label.textContent=labels[key]+(optional.has(key)?'':' *');
+ const input=document.createElement(choices?'select':['memo','comments','options'].includes(key)?'textarea':'input');input.id='field_'+key;input.name=key;input.required=!optional.has(key);if(input.tagName==='INPUT')input.type=type;
+ if(choices){for(const [value,text] of choices){const option=document.createElement('option');option.value=value;option.textContent=text;input.append(option);}}
+ input.value=record.data[key]??'';if(key.toLowerCase().includes('phone')){input.inputMode='tel';input.addEventListener('input',()=>{input.value=phone(input.value);});}
+ if(SERVICE==='showroom'&&['name','phone'].includes(key)){input.readOnly=true;input.required=false;}
+ if(['memo','comments','options'].includes(key))input.maxLength=2000;else if(input.tagName==='INPUT')input.maxLength=key.toLowerCase().includes('address')?400:254;
+ group.append(label,input);$('fields').append(group);return input;
+}
+function phone(value){const d=String(value).replace(/\D/g,'').slice(0,11);if(d.startsWith('02'))return d.replace(/^(\d{2})(\d{3,4})(\d{4})$/,'$1-$2-$3');return d.replace(/^(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3');}
+function buildFields(){
+ $('fields').replaceChildren();
+ for(const key of fieldsByService[SERVICE]){
+  let choices;
+  if(key==='showroom')choices=showroomNames.map(v=>[v,v]);
+  if(key==='time')choices=[[record.data.time,record.data.time]];
+  if(key==='serviceKey')choices=Object.entries(services).map(([k,v])=>[k,v[0]]);
+  if(key==='regionKey')choices=[['capital','수도권'],['local','지방']];
+  if(key==='bedConfigKey')choices=[['single','일반'],['sPlusS','S+S'],['ssPlusSs','SS+SS']];
+  if(key==='isSecondHand')choices=[['아니오(본인구매)','아니오(본인구매)'],['예(중고구매)','예(중고구매)']];
+  if(key==='purchaseYear')choices=[['2025년 이후','2025년 이후'],['2024년 이전','2024년 이전']];
+  if(key==='upgradeOption')choices=[[record.data.upgradeOption,record.data.upgradeOption]];
+  if(key==='quantity')choices=[['1','1개'],['2','2개'],['3','3개']];
+  const input=makeField(key,key.toLowerCase().includes('email')?'email':key==='date'?'date':'text',choices);
+  if(key==='date')input.min=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ }
+ if(SERVICE==='customer'){$('field_purchaseYear').addEventListener('change',upgradeOptions);upgradeOptions();}
+ if(SERVICE==='moving'){
+  const fee=document.createElement('p');fee.id='fee';fee.className='notice';$('fields').append(fee);
+  ['serviceKey','regionKey','bedConfigKey'].forEach(k=>$('field_'+k).addEventListener('change',movingFee));movingFee();
+ }
+ if(SERVICE==='showroom'){
+  const note=document.createElement('p');note.className='notice';note.textContent='신청 전 네이버 지도 또는 매장 전화로 실제 영업시간과 휴무일을 확인해 주세요. 아주대 병원점은 토·일·공휴일에 쉽니다. 날짜를 변경하면 가능한 시간을 다시 확인합니다.';$('fields').append(note);
+  const choice=document.createElement('label');choice.className='choice';const input=document.createElement('input');input.type='checkbox';input.required=true;input.id='visitPromise';const span=document.createElement('span');span.textContent='방문 시간을 지키고, 방문이 어려우면 미리 변경·취소하겠습니다. 당일 취소·지각은 매장에 연락하겠습니다.';choice.append(input,span);$('fields').append(choice);
+  ['date','showroom'].forEach(k=>$('field_'+k).addEventListener('change',loadTimes));loadTimes();
+ }
+}
+function upgradeOptions(){const select=$('field_upgradeOption'),previous=select.value,base=$('field_purchaseYear').value==='2025년 이후'?15000:50000;select.replaceChildren();for(const [label,price] of [['자가교체',base],['방문-수도권',base+30000],['방문-지방',base+60000]]){const value=label+'('+price.toLocaleString('ko-KR')+')';const option=new Option(value+'원',value);select.add(option);}if([...select.options].some(o=>o.value===previous))select.value=previous;}
+function movingFee(){const key=$('field_serviceKey').value,region=$('field_regionKey').value,bed=$('field_bedConfigKey').value;const item=services[key];$('fee').textContent=item?'예상 비용: '+(item[region==='capital'?1:2]*({single:1,sPlusS:1.25,ssPlusSs:1.5}[bed]||1)).toLocaleString('ko-KR')+'원 · 최종 비용과 가능 일정은 담당자가 확인합니다.':'서비스를 선택해 주세요.';$('field_addressBefore').required=key!=='assembly';$('field_addressAfter').required=key!=='disassembly';}
+let timesRequest=0;
+async function loadTimes(){
+ const seq=++timesRequest,select=$('field_time'),date=$('field_date').value,showroom=$('field_showroom').value,previous=select.value;
+ select.replaceChildren(new Option('가능한 시간 확인 중',''));select.disabled=true;
+ if(!date)return;
+ try{
+  const response=await fetch(API+'?'+new URLSearchParams({action:'getBookedTimes',date,showroom,excludeRowId:record.rowId}),{credentials:'omit',cache:'no-store'});const data=await response.json();if(data.result==='error')throw Error(data.message||'예약 시간을 확인하지 못했습니다.');if(seq!==timesRequest)return;
+  const day=new Date(date+'T12:00:00+09:00').getUTCDay(),booked=data.bookedTimes||[];let open=10,close=20;
+  if(showroom===showroomNames[0])close=day>=1&&day<=5?21:20.5;
+  if(showroom===showroomNames[1])close=day===0?20.5:day===5?20:21;
+  if(showroom===showroomNames[2])close=18;
+  if(showroom===showroomNames[3])close=day===0?19:21;
+  if(showroom===showroomNames[4]){open=9;close=20;}
+  if(showroom===showroomNames[5])close=22;
+  const holiday=['01-01','03-01','05-05','06-06','08-15','10-03','10-09','12-25'].includes(date.slice(5));
+  select.replaceChildren(new Option('방문 시간을 선택해 주세요',''));
+  if(!(showroom===showroomNames[2]&&(day===0||day===6||holiday)))for(let h=open;h+1<=close;h++){const time=String(h).padStart(2,'0')+':00';if(new Date(date+'T'+time+':00+09:00')<=new Date()||booked.includes(time)||booked.includes(String(h).padStart(2,'0')+':30'))continue;select.add(new Option(time,time));}
+  select.disabled=false;if([...select.options].some(o=>o.value===previous))select.value=previous;
+  if(select.options.length===1)select.options[0].textContent='가능한 시간이 없습니다. 다른 날짜를 선택해 주세요.';
+ }catch(error){if(seq!==timesRequest)return;select.replaceChildren(new Option('확인 실패 · 날짜를 다시 선택해 주세요',''));feedback(error.message);}
+}
+function paymentChanged(){const paid=document.querySelector('[name=payment]:checked')?.value==='paid';$('paymentFields').hidden=SERVICE==='showroom';$('refundFields').hidden=!paid;$('refundConfirmText').hidden=SERVICE==='showroom';document.querySelectorAll('[name=payment]').forEach(i=>i.required=SERVICE!=='showroom');['refundBank','refundAccount','refundHolder'].forEach(id=>{$(id).required=paid;$(id).disabled=!paid;});}
+$('viewButton').addEventListener('click',()=>setMode('view'));$('editButton').addEventListener('click',()=>setMode('edit'));$('cancelButton').addEventListener('click',()=>setMode('cancel'));document.querySelectorAll('[name=payment]').forEach(i=>i.addEventListener('change',paymentChanged));$('refundAccount').addEventListener('input',()=>{$('refundAccount').value=$('refundAccount').value.replace(/[^\d\s-]/g,'');});
+function acceptResult(result,message){record=result.record;if(result.token)token=result.token;mode='view';render();$('refundAccount').value='';feedback(message+(result.customerEmailSent?' 고객님과 운영자에게 같은 관리 버튼이 포함된 안내 메일이 발송되었습니다.':' 저장은 완료되었습니다. 메일이 도착하지 않으면 이 링크에서 처리 상태를 확인해 주세요.'),'success');window.scrollTo({top:0,behavior:'auto'});}
+$('editForm').addEventListener('submit',async event=>{event.preventDefault();if(busy||!event.currentTarget.reportValidity())return;const data=Object.fromEntries(new FormData(event.currentTarget));if(SERVICE==='showroom')data.visitPromiseAccepted=$('visitPromise').checked;if(SERVICE==='moving'){data.addressBeforeBase=data.addressBefore;data.addressBeforeDetail='';data.addressAfterBase=data.addressAfter;data.addressAfterDetail='';}setBusy(true);feedback('');try{const result=await api('managedUpdate',{data});acceptResult(result,'신청 내용이 수정되었습니다.');}catch(error){feedback(error.message);$('feedback').scrollIntoView({block:'center'});}finally{setBusy(false);}});
+$('cancelForm').addEventListener('submit',async event=>{event.preventDefault();if(busy||!event.currentTarget.reportValidity())return;const payment=document.querySelector('[name=payment]:checked')?.value,account=$('refundAccount').value.replace(/[\s-]/g,'');if(payment==='paid'&&!/^\d{6,30}$/.test(account)){feedback('계좌번호를 숫자 6~30자리로 정확히 입력해 주세요.');$('refundAccount').focus();return;}setBusy(true);feedback('');try{const result=await api('managedCancel',{confirmCancel:$('cancelConfirm').checked,payment,refundBank:$('refundBank').value.trim(),refundAccount:account,refundHolder:$('refundHolder').value.trim()});acceptResult(result,result.alreadyCancelled?'이미 취소된 신청입니다.':SERVICE==='showroom'?'쇼룸 예약이 취소되었습니다.':'신청 취소가 접수되었습니다. 입금하신 경우 담당자가 입금 내역과 환불계좌를 확인한 뒤 환불 처리합니다.');}catch(error){feedback(error.message);$('feedback').scrollIntoView({block:'center'});}finally{setBusy(false);}});
+(async()=>{if(!token){$('loading').hidden=true;feedback('메일의 「신청 내용 확인·수정·취소」 버튼으로 접속해 주세요. 신청 전용 링크가 필요합니다.');return;}setBusy(true);try{const result=await api('managedGet');record=result.record;render();}catch(error){$('loading').hidden=true;feedback(error.message+'\n최신 안내 메일의 버튼을 다시 눌러 주세요. 계속 이용할 수 없으면 매장 또는 고객센터로 문의해 주세요.');}finally{setBusy(false);}})();
+</script>
+</body>
+</html>
